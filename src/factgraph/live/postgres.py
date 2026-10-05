@@ -6,11 +6,12 @@ from typing import Any
 from ..conformance import ConformanceCase, postgres_cases
 from ..model import Model
 from ..targets import postgres
+from ..sqltext import split_sql
 
 
 def _split_sql(sql: str) -> list[str]:
-    # The canonical v0.3 emitter contains no procedures/dollar-quoted bodies; semicolon splitting is deliberate.
-    return [part.strip() for part in sql.split(";") if part.strip()]
+    # Comment- and quote-aware: the generated header comment itself contains a semicolon.
+    return split_sql(sql)
 
 
 def run(model: Model, dsn: str, *, schema_sql_override: str | None = None) -> dict[str, Any]:

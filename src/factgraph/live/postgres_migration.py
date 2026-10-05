@@ -9,6 +9,7 @@ from ..model import Model
 from ..migrations import postgres as pg_migration
 from ..migrations.base import TargetMigrationOperation
 from ..targets import postgres
+from ..sqltext import split_sql
 from .migration_common import (
     MigrationExecutionPolicy,
     initial_operation_result,
@@ -19,7 +20,8 @@ from .migration_common import (
 
 
 def _split_sql(sql: str) -> list[str]:
-    return [part.strip() for part in sql.split(";") if part.strip()]
+    # Comment- and quote-aware: the generated header comment itself contains a semicolon.
+    return split_sql(sql)
 
 
 def _type_name(data_type: str, udt_name: str) -> str:

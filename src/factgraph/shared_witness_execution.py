@@ -13,6 +13,7 @@ from .targets import mongo, postgres, typedb
 from .witness import synthesize_counterexample
 from .witness_lowering import LoweringProgram, lower_population
 from . import witness_lowering as lowering
+from .sqltext import split_sql
 
 
 _ENFORCED = {CapabilityStatus.NATIVE_ENFORCED, CapabilityStatus.EMULATED_ENFORCED}
@@ -411,6 +412,14 @@ def _evaluate(
     else:
         semantic_observation = "not_observed"
         observed_preservation = None
+    if actual_write_outcome == "prevented" and case.source_counterexample_status != "isolated":
+        # A collateral population also breaks other model rules, so the target may have refused it for one of
+        # those (seen live: a missing required email refused the unordered-roles witness in all three targets).
+        # A refusal is therefore not evidence about this obligation; an acceptance still is.
+        passed = None
+        semantic_level = "prevention_not_attributable"
+        semantic_observation = "invalid_population_prevented_by_unattributed_rule"
+        observed_preservation = None
     return {
         "obligation_id": case.obligation_id,
         "kind": case.kind,
@@ -432,7 +441,8 @@ def _evaluate(
 
 
 def _split_sql(sql: str) -> list[str]:
-    return [part.strip() for part in sql.split(";") if part.strip()]
+    # Comment- and quote-aware: the generated header comment itself contains a semicolon.
+    return split_sql(sql)
 
 
 def _unavailable_report(model: Model, target: str, cases: list[SharedWitnessCase], reason: str) -> dict[str, Any]:

@@ -120,3 +120,43 @@ def test_generated_report_counts_all_required_ready_poststate_queries_for_curren
         for target in ("postgres", "mongo", "typedb"):
             report = generated_report(model, target)
             assert report["poststate_query_ready_count"] == report["poststate_required_count"]
+
+
+SOCIAL = """
+model SocialNetwork {
+  value UserId: UUID
+  value GroupId: UUID
+  value Email: String
+  entity User {
+    id userId: UserId
+    email: Email
+  }
+  entity Group {
+    id groupId: GroupId
+  }
+  fact Conversation(a: User, b: User, group: Group) {
+    reading "{a} and {b} talked inside {group}"
+    unordered(a, b)
+  }
+}
+"""
+
+
+def test_refused_collateral_witness_is_not_evidence_for_its_obligation():
+    # Live, the unordered-roles witness was refused by PostgreSQL, MongoDB and TypeDB because its users had no
+    # required email; that refusal must not count as preservation (or falsify a weakening claim).
+    from factgraph.normalize import normalize_model
+    from factgraph.parser import parse_model
+    from factgraph import shared_witness_execution as swe
+    model = normalize_model(parse_model(SOCIAL))
+    for target in ("postgres", "mongo", "typedb"):
+        cases = {c.obligation_id: c for c in swe.build_cases(model, target)}
+        unordered = cases["constraint:unordered:Conversation:a:b"]
+        assert unordered.source_counterexample_status == "collateral"
+        refused = swe._evaluate(unordered, "prevented", error="NotNullViolation: email")
+        assert refused["passed"] is None and refused["observed_preservation"] is None
+        assert refused["semantic_evidence_level"] == "prevention_not_attributable"
+        isolated = cases["obligation:set:fact:Conversation"]
+        assert isolated.source_counterexample_status == "isolated"
+        if isolated.expected_write_outcome == "prevented":
+            assert swe._evaluate(isolated, "prevented")["passed"] is True
