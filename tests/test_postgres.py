@@ -55,3 +55,49 @@ def test_postgres_manifest_roundtrip_is_exact_but_structural_reader_admits_losse
     structural = postgres.structural_recovery(sql)
     assert structural["tables"]
     assert structural["not_reliably_recoverable_without_metadata"]
+
+
+RESERVED_NAME_MODEL = """
+model SocialNetwork {
+  value UserId: UUID
+  value GroupId: UUID
+  value Rank: Int
+
+  entity User {
+    id userId: UserId
+    order: Rank
+  }
+
+  entity Group {
+    id groupId: GroupId
+  }
+
+  fact Conversation(a: User, b: User, group: Group) {
+    reading "{a} and {b} talked inside {group}"
+    unordered(a, b)
+  }
+}
+"""
+
+
+def test_reserved_entity_and_field_names_get_a_trailing_underscore():
+    # `user`, `group` and `order` are words PostgreSQL refuses as unquoted names; before pg_name the
+    # generated file began `CREATE TABLE group (` and did not parse.
+    m = normalize_model(parse_model(RESERVED_NAME_MODEL))
+    sql = postgres.emit_sql(m)
+    assert "CREATE TABLE user_ (" in sql and "CREATE TABLE group_ (" in sql
+    assert "CREATE TABLE user (" not in sql and "CREATE TABLE group (" not in sql
+    assert "order_ BIGINT NOT NULL" in sql or "order_ INTEGER NOT NULL" in sql
+    assert "REFERENCES user_ (" in sql and "REFERENCES group_ (" in sql
+    # ordinary names are unchanged
+    assert "CREATE TABLE conversation (" in sql and "group_id UUID NOT NULL" in sql
+    assert postgres.pg_name("Conversation") == "conversation" and postgres.pg_name("User") == "user_"
+
+
+def test_conformance_and_witness_sql_use_the_same_reserved_safe_names():
+    from factgraph import conformance
+    m = normalize_model(parse_model(RESERVED_NAME_MODEL))
+    statements = [s["sql"] for c in conformance.postgres_cases(m) for s in [*c.steps] if "sql" in s]
+    assert statements, "expected PostgreSQL conformance statements"
+    assert not any(s.startswith(("INSERT INTO user ", "INSERT INTO group ")) for s in statements)
+    assert any(s.startswith("INSERT INTO user_ ") for s in statements)

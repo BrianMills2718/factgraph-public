@@ -155,10 +155,10 @@ def _pg_entity_rows(model: Model) -> dict[str, list[dict[str, str]]]:
     tables = _pg_table_map(model)
     rows: dict[str, list[dict[str, str]]] = {}
     for entity in _entity_objects(model):
-        table = tables[slug(entity.name)]
+        table = tables[postgres.pg_name(entity.name)]
         variants: list[dict[str, str]] = []
         id_hints = postgres._identifier_hints(model, entity.id)
-        hint_by_col = {slug(h.field_name): h for h in [*id_hints, *postgres._hints_for_owner(model, entity.id)]}
+        hint_by_col = {postgres.pg_name(h.field_name): h for h in [*id_hints, *postgres._hints_for_owner(model, entity.id)]}
         for variant in range(3):
             row: dict[str, str] = {}
             for col in table.columns:
@@ -189,7 +189,7 @@ def _pg_role_value_map(model: Model, role, variant: int, entity_rows: dict[str, 
 
 
 def _pg_fact_row(model: Model, fact, variants: dict[str, int], entity_rows: dict[str, list[dict[str, str]]]) -> dict[str, str]:
-    table = _pg_table_map(model)[slug(fact.name)]
+    table = _pg_table_map(model)[postgres.pg_name(fact.name)]
     row: dict[str, str] = {}
     for role in sorted(fact.roles, key=lambda r: r.ordinal):
         row.update(_pg_role_value_map(model, role, variants.get(role.id, 0), entity_rows))
@@ -198,7 +198,7 @@ def _pg_fact_row(model: Model, fact, variants: dict[str, int], entity_rows: dict
         for hint in sorted((h for h in model.field_hints.values() if h.owner_object_type_id == obj.id), key=lambda h: h.field_name):
             vt = model.object_types[hint.value_type_id]
             assert isinstance(vt, ValueType)
-            row[slug(hint.field_name)] = _pg_value_for_type(model, vt.id, 0)
+            row[postgres.pg_name(hint.field_name)] = _pg_value_for_type(model, vt.id, 0)
     # omit identity column intentionally
     expected = {c.name for c in table.columns if "GENERATED ALWAYS AS IDENTITY" not in c.sql_type.upper()}
     if set(row) != expected:
@@ -229,7 +229,7 @@ def _pg_entity_setup(model: Model, exclude: Iterable[str] = ()) -> list[str]:
     for entity in sorted(_entity_objects(model), key=lambda e: (_subtype_depth(model, e), e.name)):
         if entity.id in excluded:
             continue
-        table = slug(entity.name)
+        table = postgres.pg_name(entity.name)
         for row in rows[entity.id]:
             out.append(_pg_insert(table, row))
     return out
@@ -328,8 +328,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
     # Structural field projections and the field-origin single-valued uniqueness invariant.
     for hint in sorted(model.field_hints.values(), key=lambda h: h.field_fact_id):
         owner = model.object_types[hint.owner_object_type_id]
-        owner_table = slug(model.fact_types[owner.fact_type_id].name) if isinstance(owner, ObjectifiedFactType) else slug(owner.name)
-        col = slug(hint.field_name)
+        owner_table = postgres.pg_name(model.fact_types[owner.fact_type_id].name) if isinstance(owner, ObjectifiedFactType) else postgres.pg_name(owner.name)
+        col = postgres.pg_name(hint.field_name)
         table = table_map[owner_table]
         present = sum(1 for c in table.columns if c.name == col) == 1
         cases.append(ConformanceCase(
@@ -354,8 +354,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
             f"pg-preferred-id-{c.id}", "postgres", "preferred_identifier", (c.id,), "runtime",
             f"PostgreSQL rejects a duplicate preferred identifier for {entity.name}.",
             steps=(
-                {"sql": _pg_insert(slug(entity.name), row), "expect": "accept"},
-                {"sql": _pg_insert(slug(entity.name), row), "expect": "reject"},
+                {"sql": _pg_insert(postgres.pg_name(entity.name), row), "expect": "accept"},
+                {"sql": _pg_insert(postgres.pg_name(entity.name), row), "expect": "reject"},
             ),
         ))
 
@@ -367,37 +367,37 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
             if isinstance(owner, EntityType):
                 row = dict(entity_rows[owner.id][0])
                 invalid = dict(entity_rows[owner.id][1])
-                invalid[slug(hint.field_name)] = _invalid_pg_for_value_constraint(model, c)
+                invalid[postgres.pg_name(hint.field_name)] = _invalid_pg_for_value_constraint(model, c)
                 setup = ()
                 if model.subtype_constraint(owner.id) is not None:
                     sup = model.supertype_of(owner.id)
                     if isinstance(sup, EntityType):
-                        setup = (_pg_insert(slug(sup.name), entity_rows[sup.id][0]), _pg_insert(slug(sup.name), entity_rows[sup.id][1]))
+                        setup = (_pg_insert(postgres.pg_name(sup.name), entity_rows[sup.id][0]), _pg_insert(postgres.pg_name(sup.name), entity_rows[sup.id][1]))
                 cases.append(ConformanceCase(
                     f"pg-value-{c.id}", "postgres", "value", (c.id,), "runtime",
                     f"PostgreSQL CHECK rejects a value outside the declared domain for {model.object_types[c.object_type_id].name}.",
                     setup=setup,
                     steps=(
-                        {"sql": _pg_insert(slug(owner.name), row), "expect": "accept"},
-                        {"sql": _pg_insert(slug(owner.name), invalid), "expect": "reject"},
+                        {"sql": _pg_insert(postgres.pg_name(owner.name), row), "expect": "accept"},
+                        {"sql": _pg_insert(postgres.pg_name(owner.name), invalid), "expect": "reject"},
                     ),
                 ))
             elif isinstance(owner, ObjectifiedFactType):
                 fact = model.fact_types[owner.fact_type_id]
                 setup = _pg_entity_setup(model)
                 for dep in _objectified_dependencies(model, fact):
-                    setup.append(_pg_insert(slug(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
+                    setup.append(_pg_insert(postgres.pg_name(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
                 valid = _pg_fact_row(model, fact, {}, entity_rows)
                 changed = {fact.roles[0].id: 1} if fact.roles else {}
                 invalid = _pg_fact_row(model, fact, changed, entity_rows)
-                invalid[slug(hint.field_name)] = _invalid_pg_for_value_constraint(model, c)
+                invalid[postgres.pg_name(hint.field_name)] = _invalid_pg_for_value_constraint(model, c)
                 cases.append(ConformanceCase(
                     f"pg-value-{c.id}", "postgres", "value", (c.id,), "runtime",
                     f"PostgreSQL CHECK rejects an objectified-fact field value outside the declared domain for {model.object_types[c.object_type_id].name}.",
                     setup=tuple(setup),
                     steps=(
-                        {"sql": _pg_insert(slug(fact.name), valid), "expect": "accept"},
-                        {"sql": _pg_insert(slug(fact.name), invalid), "expect": "reject"},
+                        {"sql": _pg_insert(postgres.pg_name(fact.name), valid), "expect": "accept"},
+                        {"sql": _pg_insert(postgres.pg_name(fact.name), invalid), "expect": "reject"},
                     ),
                 ))
             continue
@@ -406,7 +406,7 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
             fact, role = direct
             setup = _pg_entity_setup(model)
             for dep in _objectified_dependencies(model, fact):
-                setup.append(_pg_insert(slug(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
+                setup.append(_pg_insert(postgres.pg_name(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
             valid = _pg_fact_row(model, fact, {}, entity_rows)
             invalid = _pg_fact_row(model, fact, {role.id: 1}, entity_rows)
             col = postgres._role_columns(model, role)[0][0]
@@ -416,8 +416,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
                 f"PostgreSQL CHECK rejects a direct fact-role value outside the domain for {model.object_types[c.object_type_id].name}.",
                 setup=tuple(setup),
                 steps=(
-                    {"sql": _pg_insert(slug(fact.name), valid), "expect": "accept"},
-                    {"sql": _pg_insert(slug(fact.name), invalid), "expect": "reject"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), valid), "expect": "accept"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), invalid), "expect": "reject"},
                 ),
             ))
 
@@ -432,10 +432,10 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
             cases.append(ConformanceCase(
                 f"pg-subtype-{c.id}", "postgres", "subtype", (c.id,), "runtime",
                 f"PostgreSQL table-per-type FK requires every {sub.name} identity to exist as {sup.name}.",
-                setup=(_pg_insert(slug(sup.name), super_row),),
+                setup=(_pg_insert(postgres.pg_name(sup.name), super_row),),
                 steps=(
-                    {"sql": _pg_insert(slug(sub.name), valid_sub), "expect": "accept"},
-                    {"sql": _pg_insert(slug(sub.name), invalid_sub), "expect": "reject"},
+                    {"sql": _pg_insert(postgres.pg_name(sub.name), valid_sub), "expect": "accept"},
+                    {"sql": _pg_insert(postgres.pg_name(sub.name), invalid_sub), "expect": "reject"},
                 ),
             ))
 
@@ -443,22 +443,22 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
     for c in sorted((c for c in model.constraints.values() if c.kind == ConstraintKind.MANDATORY and c.fact_type_id in model.field_hints), key=lambda c: c.id):
         hint = model.field_hints[c.fact_type_id]
         owner = model.object_types[hint.owner_object_type_id]
-        owner_table = slug(model.fact_types[owner.fact_type_id].name) if isinstance(owner, ObjectifiedFactType) else slug(owner.name)
+        owner_table = postgres.pg_name(model.fact_types[owner.fact_type_id].name) if isinstance(owner, ObjectifiedFactType) else postgres.pg_name(owner.name)
         if isinstance(owner, ObjectifiedFactType):
             # Relationship fields are tested as part of objectified-fact insertion; generate a row with this field omitted.
             fact = model.fact_types[owner.fact_type_id]
             setup = _pg_entity_setup(model)
             for dep in _objectified_dependencies(model, fact):
-                setup.append(_pg_insert(slug(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
+                setup.append(_pg_insert(postgres.pg_name(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
             valid = _pg_fact_row(model, fact, {}, entity_rows)
             changed = {fact.roles[0].id: 1} if fact.roles else {}
             invalid = _pg_fact_row(model, fact, changed, entity_rows)
-            invalid.pop(slug(hint.field_name), None)
+            invalid.pop(postgres.pg_name(hint.field_name), None)
         else:
             assert isinstance(owner, EntityType)
             valid = dict(entity_rows[owner.id][0])
             invalid = dict(valid)
-            invalid.pop(slug(hint.field_name), None)
+            invalid.pop(postgres.pg_name(hint.field_name), None)
             setup = []
         cases.append(ConformanceCase(
             f"pg-mandatory-{c.id}", "postgres", "mandatory", (c.id,), "runtime",
@@ -484,23 +484,23 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
                 f"pg-gap-mandatory-{c.id}", "postgres", "mandatory_not_enforced", (c.id,), "runtime",
                 f"Total participation for {fact.name}.{role.name} is intentionally not enforced by the canonical PostgreSQL mapping.",
                 steps=(
-                    {"sql": _pg_insert(slug(player.name), row), "expect": "accept"},
-                    {"sql": f"SELECT COUNT(*) FROM {slug(fact.name)};", "expect_scalar": 0},
+                    {"sql": _pg_insert(postgres.pg_name(player.name), row), "expect": "accept"},
+                    {"sql": f"SELECT COUNT(*) FROM {postgres.pg_name(fact.name)};", "expect_scalar": 0},
                 ),
             ))
 
     for fact in _source_facts(model):
         setup = _pg_entity_setup(model)
         for dep in _objectified_dependencies(model, fact):
-            setup.append(_pg_insert(slug(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
+            setup.append(_pg_insert(postgres.pg_name(dep.name), _pg_fact_row(model, dep, {}, entity_rows)))
         base = _pg_fact_row(model, fact, {}, entity_rows)
         cases.append(ConformanceCase(
             f"pg-fact-set-{fact.id}", "postgres", "fact_type", (fact.id,), "runtime",
             f"Complete fact tuple for {fact.name} has set semantics: duplicate tuple is rejected.",
             setup=tuple(setup),
             steps=(
-                {"sql": _pg_insert(slug(fact.name), base), "expect": "accept"},
-                {"sql": _pg_insert(slug(fact.name), base), "expect": "reject"},
+                {"sql": _pg_insert(postgres.pg_name(fact.name), base), "expect": "accept"},
+                {"sql": _pg_insert(postgres.pg_name(fact.name), base), "expect": "reject"},
             ),
         ))
 
@@ -518,8 +518,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
                 f"Declared uniqueness for {fact.name} is rejected when constrained roles repeat.",
                 setup=tuple(setup),
                 steps=(
-                    {"sql": _pg_insert(slug(fact.name), row1), "expect": "accept"},
-                    {"sql": _pg_insert(slug(fact.name), row2), "expect": "reject"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), row1), "expect": "accept"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), row2), "expect": "reject"},
                 ),
             ))
 
@@ -538,8 +538,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
                 f"Frequency max=1 for {fact.name} is enforced by uniqueness over the constrained roles.",
                 setup=tuple(setup),
                 steps=(
-                    {"sql": _pg_insert(slug(fact.name), row1), "expect": "accept"},
-                    {"sql": _pg_insert(slug(fact.name), row2), "expect": "reject"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), row1), "expect": "accept"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), row2), "expect": "reject"},
                 ),
             ))
 
@@ -556,8 +556,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
                 f"Canonical role ordering for unordered roles on {fact.name} accepts ordered input and rejects reversed input.",
                 setup=tuple(setup),
                 steps=(
-                    {"sql": _pg_insert(slug(fact.name), valid), "expect": "accept"},
-                    {"sql": _pg_insert(slug(fact.name), invalid), "expect": "reject"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), valid), "expect": "accept"},
+                    {"sql": _pg_insert(postgres.pg_name(fact.name), invalid), "expect": "reject"},
                 ),
             ))
 
@@ -571,8 +571,8 @@ def postgres_cases(model: Model) -> list[ConformanceCase]:
                     f"Logical symmetry on {fact.name} is retained semantically but PostgreSQL does not auto-create the reverse fact.",
                     setup=tuple(setup),
                     steps=(
-                        {"sql": _pg_insert(slug(fact.name), forward), "expect": "accept"},
-                        {"sql": f"SELECT COUNT(*) FROM {slug(fact.name)} WHERE {where};", "expect_scalar": 0},
+                        {"sql": _pg_insert(postgres.pg_name(fact.name), forward), "expect": "accept"},
+                        {"sql": f"SELECT COUNT(*) FROM {postgres.pg_name(fact.name)} WHERE {where};", "expect_scalar": 0},
                     ),
                 ))
     # Rich frequency bounds and cross-fact set constraints are deliberately represented but not enforced in v0.3.

@@ -282,12 +282,12 @@ def _postgres_entity_ops(model: Model, pop: SemanticPopulation) -> tuple[list[di
                 if len(literals) == 1:
                     vt = model.object_types[hint.value_type_id]
                     assert isinstance(vt, ValueType)
-                    col = slug(hint.field_name)
+                    col = postgres.pg_name(hint.field_name)
                     values.append((col, literals[0], vt.scalar_kind)); seen_cols.add(col)
                 elif len(literals) == 0 and subtype is not None and _invalid_subtype_instance(model, pop, entity, iid):
                     vt = model.object_types[hint.value_type_id]
                     assert isinstance(vt, ValueType)
-                    col = slug(hint.field_name)
+                    col = postgres.pg_name(hint.field_name)
                     values.append((col, _support_literal(model, vt, f"{entity.id}|{iid}|{hint.field_fact_id}"), vt.scalar_kind)); seen_cols.add(col)
             for hint in direct_hints:
                 if hint.identifier_component:
@@ -299,13 +299,13 @@ def _postgres_entity_ops(model: Model, pop: SemanticPopulation) -> tuple[list[di
                 if len(literals) == 1:
                     vt = model.object_types[hint.value_type_id]
                     assert isinstance(vt, ValueType)
-                    col = slug(hint.field_name)
+                    col = postgres.pg_name(hint.field_name)
                     if col not in seen_cols:
                         values.append((col, literals[0], vt.scalar_kind)); seen_cols.add(col)
             # An entity without a source identifier uses generated identity in the
             # target. A standalone instance can be inserted, but references cannot
             # be resolved later; the fact lowering phase diagnoses those.
-            ops.append({"op": "sql", "source_atom": {"membership": [entity.id, iid]}, "sql": _postgres_insert(slug(entity.name), values)})
+            ops.append({"op": "sql", "source_atom": {"membership": [entity.id, iid]}, "sql": _postgres_insert(postgres.pg_name(entity.name), values)})
     return ops, problems
 
 
@@ -375,14 +375,14 @@ def lower_postgres(model: Model, pop: SemanticPopulation) -> LoweringProgram:
                     elif len(literals) == 1:
                         vt = model.object_types[hint.value_type_id]
                         assert isinstance(vt, ValueType)
-                        values.append((slug(hint.field_name), literals[0], vt.scalar_kind))
+                        values.append((postgres.pg_name(hint.field_name), literals[0], vt.scalar_kind))
             problems.extend(row_problems)
             if not row_problems:
                 ops.append({
                     "op": "sql",
                     "source_atom": {"fact_type_id": fact.id, "row_index": row_index, "row": list(row)},
                     "objectified_instance_id": bound[1] if bound is not None else None,
-                    "sql": _postgres_insert(slug(fact.name), values, override_identity=obj is not None),
+                    "sql": _postgres_insert(postgres.pg_name(fact.name), values, override_identity=obj is not None),
                 })
     if problems:
         if _identifier_reference_gap_only(problems):

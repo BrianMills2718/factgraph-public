@@ -10,6 +10,35 @@ from ..model import ConstraintKind, EntityType, Model, ObjectifiedFactType, Valu
 from ..reporting import CapabilityEntry, CapabilityReport, CapabilityStatus
 
 
+# Words PostgreSQL's grammar rejects as an unquoted table or column name: its "reserved" and
+# "type or function name" keyword categories (PostgreSQL 17 grammar, via libpg_query). Each was checked
+# by parsing CREATE TABLE, column, INSERT and FOREIGN KEY statements that use it as a name.
+PG_RESERVED_NAMES = frozenset({
+    "all", "analyse", "analyze", "and", "any", "array", "as", "asc", "asymmetric", "authorization",
+    "binary", "both", "case", "cast", "check", "collate", "collation", "column", "concurrently",
+    "constraint", "create", "cross", "current_catalog", "current_date", "current_role",
+    "current_schema", "current_time", "current_timestamp", "current_user", "default", "deferrable",
+    "desc", "distinct", "do", "else", "end", "except", "false", "fetch", "for", "foreign", "freeze",
+    "from", "full", "grant", "group", "having", "ilike", "in", "initially", "inner", "intersect",
+    "into", "is", "isnull", "join", "lateral", "leading", "left", "like", "limit", "localtime",
+    "localtimestamp", "natural", "not", "notnull", "null", "offset", "on", "only", "or", "order",
+    "outer", "overlaps", "placing", "primary", "references", "returning", "right", "select",
+    "session_user", "similar", "some", "symmetric", "system_user", "table", "tablesample", "then",
+    "to", "trailing", "true", "union", "unique", "user", "using", "variadic", "verbose", "when",
+    "where", "window", "with"
+})
+
+
+def pg_name(text: str) -> str:
+    """A PostgreSQL table or column name for `text`: its slug, with "_" appended if the slug is reserved.
+
+    Without this, a model with an entity called User or Group produces `CREATE TABLE user (...)`, which
+    PostgreSQL refuses to parse. Every PostgreSQL name factgraph writes goes through this function.
+    """
+    name = slug(text)
+    return name + "_" if name in PG_RESERVED_NAMES else name
+
+
 SCALAR_SQL = {
     "String": "TEXT",
     "Int": "INTEGER",
@@ -90,17 +119,17 @@ def _identifier_hints(model: Model, entity_id: str):
 def _entity_key(model: Model, entity: EntityType) -> tuple[tuple[str, str], ...]:
     ids = _identifier_hints(model, entity.id)
     if ids:
-        return tuple((slug(h.field_name), _value_sql(model, h.value_type_id)) for h in ids)
+        return tuple((pg_name(h.field_name), _value_sql(model, h.value_type_id)) for h in ids)
     return (("id", "BIGINT"),)
 
 
 def _objectified_table_for(model: Model, objectified: ObjectifiedFactType) -> str:
-    return slug(model.fact_types[objectified.fact_type_id].name)
+    return pg_name(model.fact_types[objectified.fact_type_id].name)
 
 
 def _role_columns(model: Model, role) -> tuple[tuple[str, str], ...]:
     player = model.object_types[role.player_id]
-    base = slug(role.name)
+    base = pg_name(role.name)
     if isinstance(player, ValueType):
         return ((base, _value_sql(model, player.id)),)
     if isinstance(player, EntityType):
@@ -118,7 +147,7 @@ def _role_fk(model: Model, role) -> PgForeignKey | None:
     cols = tuple(c for c, _ in _role_columns(model, role))
     if isinstance(player, EntityType):
         key = _entity_key(model, player)
-        return PgForeignKey(cols, slug(player.name), tuple(c for c, _ in key))
+        return PgForeignKey(cols, pg_name(player.name), tuple(c for c, _ in key))
     if isinstance(player, ObjectifiedFactType):
         return PgForeignKey(cols, _objectified_table_for(model, player), ("id",))
     return None
@@ -179,29 +208,29 @@ def build_plan(model: Model) -> PgPlan:
             inherited_hints = _identifier_hints(model, sup.id)
             if inherited_hints:
                 for hint in inherited_hints:
-                    name = slug(hint.field_name)
+                    name = pg_name(hint.field_name)
                     columns.append(PgColumn(name, _value_sql(model, hint.value_type_id), False))
                     checks.extend(_value_checks_for_column(model, hint.value_type_id, name))
             else:
                 columns.append(PgColumn("id", key[0][1], False))
             pk = tuple(c for c, _ in key)
-            foreign_keys.append(PgForeignKey(pk, slug(sup.name), pk))
+            foreign_keys.append(PgForeignKey(pk, pg_name(sup.name), pk))
         elif direct_ids:
             for hint in direct_ids:
-                name = slug(hint.field_name)
+                name = pg_name(hint.field_name)
                 columns.append(PgColumn(name, _value_sql(model, hint.value_type_id), False))
                 checks.extend(_value_checks_for_column(model, hint.value_type_id, name))
-            pk = tuple(slug(h.field_name) for h in direct_ids)
+            pk = tuple(pg_name(h.field_name) for h in direct_ids)
         else:
             columns.append(PgColumn("id", "BIGINT GENERATED ALWAYS AS IDENTITY", False))
             pk = ("id",)
         for hint in _hints_for_owner(model, entity.id):
             if hint.identifier_component:
                 continue
-            name = slug(hint.field_name)
+            name = pg_name(hint.field_name)
             columns.append(PgColumn(name, _value_sql(model, hint.value_type_id), not hint.required))
             checks.extend(_value_checks_for_column(model, hint.value_type_id, name))
-        tables.append(PgTable(slug(entity.name), tuple(columns), pk, tuple(foreign_keys), (), tuple(checks), "subtype_entity" if subtype else "entity", entity.name))
+        tables.append(PgTable(pg_name(entity.name), tuple(columns), pk, tuple(foreign_keys), (), tuple(checks), "subtype_entity" if subtype else "entity", entity.name))
 
     # Source fact types become relationship tables. Objectified facts receive identity and carry their own fields.
     source_facts = sorted((f for f in model.fact_types.values() if f.id not in model.field_hints), key=lambda f: f.name)
@@ -226,7 +255,7 @@ def build_plan(model: Model) -> PgPlan:
                 foreign_keys.append(fk)
         if obj is not None:
             for hint in _hints_for_owner(model, obj.id):
-                name = slug(hint.field_name)
+                name = pg_name(hint.field_name)
                 columns.append(PgColumn(name, _value_sql(model, hint.value_type_id), not hint.required))
                 checks.extend(_value_checks_for_column(model, hint.value_type_id, name))
 
@@ -258,7 +287,7 @@ def build_plan(model: Model) -> PgPlan:
                     checks.append(f"({', '.join(left)}) <= ({', '.join(right)})")
 
         tables.append(PgTable(
-            slug(fact.name), tuple(columns), pk, tuple(foreign_keys), tuple(uniques), tuple(checks),
+            pg_name(fact.name), tuple(columns), pk, tuple(foreign_keys), tuple(uniques), tuple(checks),
             "objectified_fact" if obj is not None else "fact", fact.name
         ))
 
@@ -311,10 +340,10 @@ def capability_report(model: Model) -> CapabilityReport:
     entries: list[CapabilityEntry] = []
     for fact in sorted((f for f in model.fact_types.values() if f.id not in model.field_hints), key=lambda f: f.id):
         entries.append(CapabilityEntry("fact_type", fact.id, "postgres", CapabilityStatus.NATIVE_ENFORCED,
-            mechanism=f"table {slug(fact.name)}; set semantics enforced by primary/unique key"))
+            mechanism=f"table {pg_name(fact.name)}; set semantics enforced by primary/unique key"))
     for hint in sorted(model.field_hints.values(), key=lambda h: h.field_fact_id):
         entries.append(CapabilityEntry("field_projection", hint.field_fact_id, "postgres", CapabilityStatus.NATIVE_ENFORCED,
-            mechanism=f"column {slug(hint.field_name)} on owner table"))
+            mechanism=f"column {pg_name(hint.field_name)} on owner table"))
     for c in sorted(model.constraints.values(), key=lambda c: c.id):
         if c.kind == ConstraintKind.UNIQUENESS:
             mechanism = "single-valued column projection" if c.fact_type_id in model.field_hints else "UNIQUE / PRIMARY KEY"

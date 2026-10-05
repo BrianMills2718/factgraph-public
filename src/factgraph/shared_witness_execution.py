@@ -135,7 +135,7 @@ def _pg_fact_count_postcondition(model: Model, pop, fact_id: str, role_iids: dic
         else:
             return None
     where = " AND ".join(clauses) if clauses else "TRUE"
-    table = lowering.slug(fact.name)
+    table = postgres.pg_name(fact.name)
     return {
         "op": "scalar_sql",
         "sql": f"SELECT COUNT(*) FROM {table} WHERE {where};",
