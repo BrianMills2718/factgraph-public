@@ -1,0 +1,243 @@
+{
+  "$schema": "https://www.factum-orm.com/schema/orm-model-2.schema.json",
+  "version": 2,
+  "name": "FactumPeople",
+  "lang": "en",
+  "objectTypes": [
+    {
+      "id": "ot_person",
+      "name": "Person",
+      "kind": "entity",
+      "refMode": "nr",
+      "dataType": "integer",
+      "meta": {
+        "guid": "11111111-1111-1111-1111-111111111111"
+      }
+    },
+    {
+      "id": "ot_company",
+      "name": "Company",
+      "kind": "entity",
+      "refMode": "code",
+      "dataType": "string"
+    },
+    {
+      "id": "ot_employee",
+      "name": "Employee",
+      "kind": "entity"
+    },
+    {
+      "id": "ot_status",
+      "name": "Status",
+      "kind": "value",
+      "dataType": "string"
+    },
+    {
+      "id": "ot_employment",
+      "name": "Employment",
+      "kind": "entity",
+      "objectifiedFactTypeId": "ft_employment"
+    }
+  ],
+  "factTypes": [
+    {
+      "id": "ft_employment",
+      "roles": [
+        {
+          "id": "r_employee",
+          "objectTypeId": "ot_person",
+          "name": "employee"
+        },
+        {
+          "id": "r_employer",
+          "objectTypeId": "ot_company",
+          "name": "employer"
+        }
+      ],
+      "readings": [
+        {
+          "id": "rd_employment",
+          "roleOrder": [
+            "r_employee",
+            "r_employer"
+          ],
+          "text": "{0} works for {1}",
+          "isPrimary": true
+        }
+      ],
+      "population": [
+        {
+          "id": "pop_employment_1",
+          "values": [
+            101,
+            "ACME"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ft_status",
+      "roles": [
+        {
+          "id": "r_status_person",
+          "objectTypeId": "ot_person",
+          "name": "person"
+        },
+        {
+          "id": "r_status_value",
+          "objectTypeId": "ot_status",
+          "name": "status"
+        }
+      ],
+      "readings": [
+        {
+          "id": "rd_status",
+          "roleOrder": [
+            "r_status_person",
+            "r_status_value"
+          ],
+          "text": "{0} has status {1}",
+          "isPrimary": true
+        }
+      ],
+      "population": [
+        {
+          "id": "pop_status_1",
+          "values": [
+            101,
+            "active"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ft_friendship",
+      "roles": [
+        {
+          "id": "r_friend_a",
+          "objectTypeId": "ot_person",
+          "name": "friendA"
+        },
+        {
+          "id": "r_friend_b",
+          "objectTypeId": "ot_person",
+          "name": "friendB"
+        }
+      ],
+      "readings": [
+        {
+          "id": "rd_friendship",
+          "roleOrder": [
+            "r_friend_a",
+            "r_friend_b"
+          ],
+          "text": "{0} is friends with {1}",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "ft_managed",
+      "roles": [
+        {
+          "id": "r_managed_employment",
+          "objectTypeId": "ot_employment",
+          "name": "employment"
+        },
+        {
+          "id": "r_manager",
+          "objectTypeId": "ot_person",
+          "name": "manager"
+        }
+      ],
+      "readings": [
+        {
+          "id": "rd_managed",
+          "roleOrder": [
+            "r_managed_employment",
+            "r_manager"
+          ],
+          "text": "{0} is managed by {1}",
+          "isPrimary": true
+        }
+      ]
+    }
+  ],
+  "subtypeRelations": [
+    {
+      "id": "st_employee_person",
+      "subtypeId": "ot_employee",
+      "supertypeId": "ot_person"
+    }
+  ],
+  "constraints": [
+    {
+      "id": "uc_employee",
+      "kind": "uniqueness",
+      "roles": [
+        "r_employee"
+      ]
+    },
+    {
+      "id": "mc_employee",
+      "kind": "mandatory",
+      "roles": [
+        "r_employee"
+      ]
+    },
+    {
+      "id": "fc_employer",
+      "kind": "frequency",
+      "roles": [
+        "r_employer"
+      ],
+      "min": 0,
+      "max": 10
+    },
+    {
+      "id": "vc_status",
+      "kind": "value",
+      "objectTypeId": "ot_status",
+      "ranges": [
+        {
+          "value": "active"
+        },
+        {
+          "value": "inactive"
+        }
+      ]
+    },
+    {
+      "id": "rc_friendship",
+      "kind": "ring",
+      "roles": [
+        "r_friend_a",
+        "r_friend_b"
+      ],
+      "types": [
+        "symmetric"
+      ]
+    },
+    {
+      "id": "sc_employed_has_status",
+      "kind": "subset",
+      "roleSequences": [
+        [
+          "r_employee"
+        ],
+        [
+          "r_status_person"
+        ]
+      ]
+    }
+  ],
+  "diagram": {
+    "name": "Main",
+    "shapes": {
+      "ot_person": {
+        "x": 100,
+        "y": 100
+      }
+    }
+  }
+}

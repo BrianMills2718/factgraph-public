@@ -1,0 +1,17 @@
+model CRM {
+  value Id: String
+  value Email: String
+
+  entity Customer {
+    id id: Id
+    email: Email?
+  }
+
+  entity Account {
+    id id: Id
+  }
+
+  fact Ownership(owner: Customer, account: Account) {
+    reading "{owner} owns {account}"
+  }
+}

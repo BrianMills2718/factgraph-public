@@ -1,0 +1,48 @@
+id: https://example.org/people
+name: LinkMLPeople
+prefixes:
+  ex: https://example.org/
+default_prefix: ex
+default_range: string
+enums:
+  EmploymentStatus:
+    permissible_values:
+      active:
+      inactive:
+      leave:
+slots:
+  person_id:
+    range: string
+    identifier: true
+  age:
+    range: integer
+    required: true
+    minimum_value: 0
+    maximum_value: 130
+  status:
+    range: EmploymentStatus
+    required: true
+  employer:
+    range: Company
+    required: true
+  aliases:
+    range: string
+    multivalued: true
+    minimum_cardinality: 0
+    maximum_cardinality: 3
+  company_id:
+    range: string
+    identifier: true
+classes:
+  Person:
+    slots:
+      - person_id
+      - age
+      - status
+      - employer
+      - aliases
+  Employee:
+    is_a: Person
+  Company:
+    slots:
+      - company_id

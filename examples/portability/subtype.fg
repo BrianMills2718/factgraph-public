@@ -1,0 +1,6 @@
+model PortabilitySubtype {
+  value PersonId: String
+  entity Person { id personId: PersonId }
+  entity Employee { }
+  subtype Employee is Person
+}

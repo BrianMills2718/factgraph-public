@@ -1,0 +1,8 @@
+model PortabilityUnorderedRoles {
+  value PersonId: String
+  entity Person { id personId: PersonId }
+  fact Pair(left: Person, right: Person) {
+    reading "{left} is paired with {right}"
+    unordered(left, right)
+  }
+}

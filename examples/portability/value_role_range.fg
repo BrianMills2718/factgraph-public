@@ -1,0 +1,9 @@
+model PortabilityValueRoleRange {
+  value PersonId: String
+  value Score: Int { range(0, 100) }
+  entity Person { id personId: PersonId }
+  fact Measurement(person: Person, score: Score) {
+    reading "{person} has score {score}"
+    unique(person)
+  }
+}

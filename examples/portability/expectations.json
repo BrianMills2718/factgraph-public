@@ -1,0 +1,229 @@
+{
+  "format": "factgraph-portability-benchmark-expectations-v1",
+  "targets": [
+    "postgres",
+    "mongo",
+    "typedb"
+  ],
+  "cases": {
+    "binary_role_uniqueness.fg": [
+      {
+        "kind": "uniqueness",
+        "reading_contains": "role sequence (person) is unique",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "compound_identifier.fg": [
+      {
+        "kind": "preferred_identifier",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "date_enum.fg": [
+      {
+        "kind": "value",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "weakened",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "decimal_range.fg": [
+      {
+        "kind": "value",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "weakened",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "frequency_max_one.fg": [
+      {
+        "kind": "frequency",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "frequency_max_two.fg": [
+      {
+        "kind": "frequency",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "frequency_min_one_max_two.fg": [
+      {
+        "kind": "frequency",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "nary_partial_uniqueness.fg": [
+      {
+        "kind": "uniqueness",
+        "reading_contains": "role sequence (a, b) is unique",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "nary_set_semantics.fg": [
+      {
+        "kind": "fact_set_semantics",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "objectification.fg": [
+      {
+        "kind": "value",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "weakened",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "set_constraints.fg": [
+      {
+        "kind": "subset",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "weakened"
+        }
+      },
+      {
+        "kind": "equality",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "weakened"
+        }
+      },
+      {
+        "kind": "exclusion",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "simple_identifier.fg": [
+      {
+        "kind": "preferred_identifier",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "subtype.fg": [
+      {
+        "kind": "subtype",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "weakened",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "symmetry.fg": [
+      {
+        "kind": "ring",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "total_participation.fg": [
+      {
+        "kind": "mandatory",
+        "reading_contains": "participates in Employment",
+        "expected": {
+          "postgres": "weakened",
+          "mongo": "weakened",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "unary_fact_set.fg": [
+      {
+        "kind": "fact_set_semantics",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "unordered_roles.fg": [
+      {
+        "kind": "unordered_role_group",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "weakened"
+        }
+      }
+    ],
+    "value_enum.fg": [
+      {
+        "kind": "value",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "value_range.fg": [
+      {
+        "kind": "value",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ],
+    "value_role_range.fg": [
+      {
+        "kind": "value",
+        "expected": {
+          "postgres": "preserved_claimed",
+          "mongo": "preserved_claimed",
+          "typedb": "preserved_claimed"
+        }
+      }
+    ]
+  }
+}

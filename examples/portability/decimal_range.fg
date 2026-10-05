@@ -1,0 +1,8 @@
+model PortabilityDecimalRange {
+  value AccountId: String
+  value Balance: Decimal { range(0, 1000000) }
+  entity Account {
+    id accountId: AccountId
+    balance: Balance
+  }
+}

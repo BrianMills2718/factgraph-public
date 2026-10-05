@@ -1,0 +1,12 @@
+{
+  "object_types": {
+    "Customer": "Client"
+  },
+  "facts": {},
+  "roles": {
+    "Ownership.owner": "Ownership.client"
+  },
+  "fields": {
+    "Customer.email": "Client.primaryEmail"
+  }
+}

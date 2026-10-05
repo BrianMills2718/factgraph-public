@@ -1,0 +1,21 @@
+{
+  "artifact_sha256": "26f4c629c3b80ecac5767086c5991b29aa1d9a14200cbbc1595435aba1d35836",
+  "entities": {
+    "entity:Person": {
+      "field_columns": {
+        "fact:Person__age": "years",
+        "fact:Person__personId": "pid"
+      },
+      "source_name": "Person",
+      "synthetic_id_column": null,
+      "table": "people_record"
+    }
+  },
+  "facts": {},
+  "format": "factgraph-postgres-artifact-mapping-v1",
+  "identifier_contract": "unquoted PostgreSQL identifiers matching [A-Za-z_][A-Za-z0-9_]*; denormalized/shared-table layouts are outside v1",
+  "layout_contract": "one table per entity and one table per source fact; scalar field facts map to columns; role references retain the canonical role-column arity but names may differ",
+  "source_model": "PortabilityValueRange",
+  "source_model_id": "model:PortabilityValueRange",
+  "source_model_semantic_sha256": "aa6ddc11898aa0b51bfcbb9c978e867d3e792db40ba6faed8767cd65f0943aef"
+}

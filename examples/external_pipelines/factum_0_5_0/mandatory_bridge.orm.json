@@ -1,0 +1,66 @@
+{
+  "$schema": "https://www.factum-orm.com/schema/orm-model-2.schema.json",
+  "version": 2,
+  "name": "FactumMandatoryBridge",
+  "lang": "en",
+  "objectTypes": [
+    {
+      "id": "ot_person",
+      "name": "Person",
+      "kind": "entity",
+      "refMode": "nr",
+      "dataType": "integer",
+      "meta": {"guid": "20000000-0000-0000-0000-000000000001"}
+    },
+    {
+      "id": "ot_skill",
+      "name": "Skill",
+      "kind": "entity",
+      "refMode": "code",
+      "dataType": "string",
+      "meta": {"guid": "20000000-0000-0000-0000-000000000002"}
+    }
+  ],
+  "factTypes": [
+    {
+      "id": "ft_person_skill",
+      "meta": {
+        "guid": "20000000-0000-0000-0000-000000000003",
+        "title": "PersonHasSkill"
+      },
+      "roles": [
+        {
+          "id": "r_person",
+          "objectTypeId": "ot_person",
+          "meta": {"guid": "20000000-0000-0000-0000-000000000004"}
+        },
+        {
+          "id": "r_skill",
+          "objectTypeId": "ot_skill",
+          "meta": {"guid": "20000000-0000-0000-0000-000000000005"}
+        }
+      ],
+      "readings": [
+        {
+          "id": "rd_person_skill",
+          "roleOrder": ["r_person", "r_skill"],
+          "text": "{0} has {1}",
+          "isPrimary": true
+        }
+      ]
+    }
+  ],
+  "subtypeRelations": [],
+  "constraints": [
+    {
+      "id": "uc_person_skill",
+      "kind": "uniqueness",
+      "roles": ["r_person", "r_skill"]
+    },
+    {
+      "id": "mc_person_skill",
+      "kind": "mandatory",
+      "roles": ["r_person"]
+    }
+  ]
+}

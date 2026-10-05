@@ -1,0 +1,10 @@
+model PortabilityFrequencyMaxOne {
+  value PersonId: String
+  value DeskId: String
+  entity Person { id personId: PersonId }
+  entity Desk { id deskId: DeskId }
+  fact Seating(person: Person, desk: Desk) {
+    reading "{person} sits at {desk}"
+    frequency(person, 0, 1)
+  }
+}

@@ -1,0 +1,14 @@
+model PortabilitySetConstraints {
+  value PersonId: String
+  value TeamId: String
+  entity Person { id personId: PersonId }
+  entity Team { id teamId: TeamId }
+  fact Membership(person: Person, team: Team) { reading "{person} belongs to {team}" }
+  fact Approved(person: Person, team: Team) { reading "{person} is approved for {team}" }
+  fact Banned(person: Person, team: Team) { reading "{person} is banned from {team}" }
+  fact Current(person: Person) { reading "{person} is current" }
+  fact Listed(person: Person) { reading "{person} is listed" }
+  subset Approved(person, team) Membership(person, team)
+  equality Current(person) Listed(person)
+  exclusion Approved(person, team) Banned(person, team)
+}

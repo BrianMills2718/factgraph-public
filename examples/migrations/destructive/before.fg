@@ -1,0 +1,17 @@
+model Cleanup {
+  value Id: String
+  value Label: String
+
+  entity Person {
+    id id: Id
+    legacyNote: Label?
+  }
+
+  entity Archive {
+    id id: Id
+  }
+
+  fact LegacyLink(person: Person, archive: Archive) {
+    reading "{person} has legacy archive {archive}"
+  }
+}

@@ -1,0 +1,10 @@
+model PortabilityBinaryRoleUniqueness {
+  value PersonId: String
+  value DeskId: String
+  entity Person { id personId: PersonId }
+  entity Desk { id deskId: DeskId }
+  fact Assignment(person: Person, desk: Desk) {
+    reading "{person} is assigned to {desk}"
+    unique(person)
+  }
+}

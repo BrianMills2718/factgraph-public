@@ -1,0 +1,10 @@
+model PortabilityFrequencyMinOneMaxTwo {
+  value PersonId: String
+  value ProjectId: String
+  entity Person { id personId: PersonId }
+  entity Project { id projectId: ProjectId }
+  fact Assignment(person: Person, project: Project) {
+    reading "{person} is assigned to {project}"
+    frequency(person, 1, 2)
+  }
+}

@@ -1,0 +1,14 @@
+model PortabilityObjectification {
+  value PersonId: String
+  value CompanyId: String
+  value Salary: Decimal { range(0, 10000000) }
+  entity Person { id personId: PersonId }
+  entity Company { id companyId: CompanyId }
+  fact Employment(employee: Person, employer: Company) objectify EmploymentRecord {
+    salary: Salary
+    reading "{employee} works for {employer}"
+  }
+  fact ManagedBy(employment: EmploymentRecord, manager: Person) {
+    reading "{employment} is managed by {manager}"
+  }
+}

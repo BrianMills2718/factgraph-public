@@ -1,0 +1,20 @@
+model TeamApp identity "team-app" {
+  value UserId: UUID identity "user-id"
+  value TeamId: UUID identity "team-id"
+  value Text: String identity "text"
+
+  entity User identity "user" {
+    id userId: UserId identity "user.id"
+  }
+  entity Team identity "team" {
+    id teamId: TeamId identity "team.id"
+  }
+
+  fact Membership identity "membership"(
+    member: User identity "membership.member",
+    team: Team identity "membership.team"
+  ) {
+    reading "{member} belongs to {team}"
+    unique(member, team)
+  }
+}

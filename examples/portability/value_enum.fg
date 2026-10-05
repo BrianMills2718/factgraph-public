@@ -1,0 +1,8 @@
+model PortabilityValueEnum {
+  value PersonId: String
+  value Status: String { oneof("active", "inactive", "pending") }
+  entity Person {
+    id personId: PersonId
+    status: Status
+  }
+}

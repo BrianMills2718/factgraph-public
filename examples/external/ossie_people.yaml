@@ -1,0 +1,27 @@
+name: PeopleOntology
+ontology:
+  - concept: PersonId
+    type: ValueType
+    extends: [String]
+  - concept: Salary
+    type: ValueType
+    extends: [Decimal]
+  - concept: Person
+    type: EntityType
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles:
+          - concept: PersonId
+        multiplicity: OneToOne
+        verbalizes:
+          - "{Person} is identified by {PersonId}"
+      - name: earns
+        roles:
+          - concept: Salary
+        multiplicity: ManyToOne
+        verbalizes:
+          - "{Person} earns {Salary}"
+  - concept: Employee
+    type: EntityType
+    extends: [Person]

@@ -1,0 +1,17 @@
+model MandatoryParticipation {
+  value PersonId: String
+  value CompanyId: String
+
+  entity Person {
+    id personId: PersonId
+  }
+
+  entity Company {
+    id companyId: CompanyId
+  }
+
+  fact Employment(employee: Person, employer: Company) {
+    reading "{employee} works for {employer}"
+    mandatory(employee)
+  }
+}

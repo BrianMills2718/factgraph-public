@@ -1,0 +1,20 @@
+model RoleSemantics {
+  value PersonId: UUID
+
+  entity Person {
+    id personId: PersonId
+  }
+
+  fact Partnership(a: Person, b: Person) {
+    reading "{a} is partnered with {b}"
+    unordered(a, b)
+  }
+
+  fact Knows(knower: Person, known: Person) {
+    reading "{knower} knows {known}"
+    symmetric
+  }
+
+  sample Partnership("alice", "bob")
+  sample Knows("alice", "bob")
+}

@@ -1,0 +1,1 @@
+"""Schema target adapters."""

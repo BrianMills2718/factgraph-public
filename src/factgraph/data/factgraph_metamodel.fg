@@ -1,0 +1,177 @@
+model FactgraphMetamodel {
+
+  value MM_Boolean: Bool
+  value MM_Integer: Int
+  value MM_Json: String
+  value MM_Text: String
+
+  entity MM_Analysis {
+  }
+  entity MM_Constraint {
+  }
+  entity MM_FactType {
+  }
+  entity MM_FieldHint {
+  }
+  entity MM_Model {
+  }
+  entity MM_ObjectType {
+  }
+  entity MM_Reading {
+  }
+  entity MM_Role {
+  }
+  entity MM_Sample {
+  }
+  entity MM_SourceNote {
+  }
+
+  fact MM_AnalysisArgs(analysis: MM_Analysis, args: MM_Json) {
+    unique(analysis)
+  }
+  fact MM_AnalysisName(analysis: MM_Analysis, name: MM_Text) {
+    unique(analysis)
+  }
+  fact MM_ConstraintFact(constraint: MM_Constraint, factType: MM_FactType) {
+    unique(constraint)
+  }
+  fact MM_ConstraintFieldFact(constraint: MM_Constraint, factType: MM_FactType, ordinal: MM_Integer) {
+    unique(constraint, ordinal)
+  }
+  fact MM_ConstraintKind(constraint: MM_Constraint, kind: MM_Text) {
+    unique(constraint)
+  }
+  fact MM_ConstraintMaxFrequency(constraint: MM_Constraint, maximum: MM_Integer) {
+    unique(constraint)
+  }
+  fact MM_ConstraintMinFrequency(constraint: MM_Constraint, minimum: MM_Integer) {
+    unique(constraint)
+  }
+  fact MM_ConstraintObjectType(constraint: MM_Constraint, objectType: MM_ObjectType) {
+    unique(constraint)
+  }
+  fact MM_ConstraintRingKind(constraint: MM_Constraint, ringKind: MM_Text) {
+    unique(constraint)
+  }
+  fact MM_ConstraintRole(constraint: MM_Constraint, role: MM_Role, ordinal: MM_Integer) {
+    unique(constraint, ordinal)
+  }
+  fact MM_ConstraintSubtype(constraint: MM_Constraint, subtype: MM_ObjectType) {
+    unique(constraint)
+  }
+  fact MM_ConstraintSupertype(constraint: MM_Constraint, supertype: MM_ObjectType) {
+    unique(constraint)
+  }
+  fact MM_ConstraintTargetFact(constraint: MM_Constraint, factType: MM_FactType) {
+    unique(constraint)
+  }
+  fact MM_ConstraintTargetRole(constraint: MM_Constraint, role: MM_Role, ordinal: MM_Integer) {
+    unique(constraint, ordinal)
+  }
+  fact MM_ConstraintValueSpec(constraint: MM_Constraint, valueSpec: MM_Json) {
+    unique(constraint)
+  }
+  fact MM_FactRole(factType: MM_FactType, role: MM_Role, ordinal: MM_Integer) {
+    unique(factType, ordinal)
+    unique(role)
+  }
+  fact MM_FactTypeName(factType: MM_FactType, name: MM_Text) {
+    unique(factType)
+  }
+  fact MM_FieldHintFact(hint: MM_FieldHint, factType: MM_FactType) {
+    unique(hint)
+  }
+  fact MM_FieldHintIdentifier(hint: MM_FieldHint, identifier: MM_Boolean) {
+    unique(hint)
+  }
+  fact MM_FieldHintName(hint: MM_FieldHint, name: MM_Text) {
+    unique(hint)
+  }
+  fact MM_FieldHintOwner(hint: MM_FieldHint, objectType: MM_ObjectType) {
+    unique(hint)
+  }
+  fact MM_FieldHintRequired(hint: MM_FieldHint, required: MM_Boolean) {
+    unique(hint)
+  }
+  fact MM_FieldHintValueType(hint: MM_FieldHint, objectType: MM_ObjectType) {
+    unique(hint)
+  }
+  fact MM_ModelAnalysis(model: MM_Model, analysis: MM_Analysis) {
+    unique(analysis)
+  }
+  fact MM_ModelCodecVersion(model: MM_Model, version: MM_Text) {
+    unique(model)
+  }
+  fact MM_ModelConstraint(model: MM_Model, constraint: MM_Constraint) {
+    unique(constraint)
+  }
+  fact MM_ModelFactType(model: MM_Model, factType: MM_FactType) {
+    unique(factType)
+  }
+  fact MM_ModelFieldHint(model: MM_Model, hint: MM_FieldHint) {
+    unique(hint)
+  }
+  fact MM_ModelManifestHash(model: MM_Model, hash: MM_Text) {
+    unique(model)
+  }
+  fact MM_ModelName(model: MM_Model, name: MM_Text) {
+    unique(model)
+  }
+  fact MM_ModelObjectType(model: MM_Model, objectType: MM_ObjectType) {
+    unique(objectType)
+  }
+  fact MM_ModelReading(model: MM_Model, reading: MM_Reading) {
+    unique(reading)
+  }
+  fact MM_ModelSample(model: MM_Model, sample: MM_Sample) {
+    unique(sample)
+  }
+  fact MM_ModelSemanticHash(model: MM_Model, hash: MM_Text) {
+    unique(model)
+  }
+  fact MM_ModelSourceNote(model: MM_Model, note: MM_SourceNote) {
+    unique(note)
+  }
+  fact MM_ObjectTypeKind(objectType: MM_ObjectType, kind: MM_Text) {
+    unique(objectType)
+  }
+  fact MM_ObjectTypeName(objectType: MM_ObjectType, name: MM_Text) {
+    unique(objectType)
+  }
+  fact MM_ObjectifiedFactTarget(objectType: MM_ObjectType, factType: MM_FactType) {
+    unique(objectType)
+  }
+  fact MM_ReadingFact(reading: MM_Reading, factType: MM_FactType) {
+    unique(reading)
+  }
+  fact MM_ReadingRole(reading: MM_Reading, role: MM_Role, ordinal: MM_Integer) {
+    unique(reading, ordinal)
+  }
+  fact MM_ReadingTemplate(reading: MM_Reading, template: MM_Text) {
+    unique(reading)
+  }
+  fact MM_RoleName(role: MM_Role, name: MM_Text) {
+    unique(role)
+  }
+  fact MM_RolePlayer(role: MM_Role, objectType: MM_ObjectType) {
+    unique(role)
+  }
+  fact MM_SampleFact(sample: MM_Sample, factType: MM_FactType) {
+    unique(sample)
+  }
+  fact MM_SampleSourceLine(sample: MM_Sample, line: MM_Integer) {
+    unique(sample)
+  }
+  fact MM_SampleValue(sample: MM_Sample, value: MM_Text, ordinal: MM_Integer) {
+    unique(sample, ordinal)
+  }
+  fact MM_SourceNoteElement(note: MM_SourceNote, elementId: MM_Text) {
+    unique(note)
+  }
+  fact MM_SourceNoteLine(note: MM_SourceNote, line: MM_Integer) {
+    unique(note)
+  }
+  fact MM_ValueTypeScalarKind(objectType: MM_ObjectType, scalarKind: MM_Text) {
+    unique(objectType)
+  }
+}

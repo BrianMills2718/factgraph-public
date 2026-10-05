@@ -1,0 +1,43 @@
+model RicherConstraints {
+  value PersonId: String
+  value TeamId: String
+  value Age: Int {
+    range(0, 1000)
+  }
+  value Status: String {
+    oneof("a001", "m002", "z003")
+  }
+
+  entity Person {
+    id personId: PersonId
+    age: Age
+    status: Status
+  }
+
+  entity Employee {
+    level: Status?
+  }
+
+  entity Team {
+    id teamId: TeamId
+  }
+
+  subtype Employee is Person
+
+  fact Membership(member: Person, team: Team) {
+    reading "{member} belongs to {team}"
+    frequency(member, 0, 1)
+  }
+
+  fact EmployeeTeam(employee: Employee, team: Team) {
+    reading "{employee} works on {team}"
+  }
+
+  fact Mentorship(mentor: Person, mentee: Person) {
+    reading "{mentor} mentors {mentee}"
+    frequency(mentor, 1, 2)
+  }
+
+  sample Membership("p-1", "t-1")
+  sample Mentorship("p-1", "p-2")
+}

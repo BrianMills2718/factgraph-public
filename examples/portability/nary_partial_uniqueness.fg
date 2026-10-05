@@ -1,0 +1,12 @@
+model PortabilityNaryPartialUniqueness {
+  value AId: String
+  value BId: String
+  value CId: String
+  entity A { id id: AId }
+  entity B { id id: BId }
+  entity C { id id: CId }
+  fact Ternary(a: A, b: B, c: C) {
+    reading "{a} and {b} determine one {c}"
+    unique(a, b)
+  }
+}

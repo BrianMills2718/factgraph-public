@@ -1,0 +1,30 @@
+{
+  "format": "factgraph-third-party-upstream-source-provenance-v1",
+  "experiment": "Factum upstream mandatory functional-binary preservation control",
+  "generator": {
+    "project": "Factum ORM",
+    "version": "0.5.0",
+    "repository": "https://github.com/Volland/factum-orm",
+    "commit": "7897dd0c4303b9eea46c60342f1632b27a624744",
+    "package_json_git_blob_sha1": "2079186fbc29b4d1214f3acb732bc0ccb99355cf",
+    "package_lock_git_blob_sha1": "c6543f0df885f36880c5f7d7904addb090b95882",
+    "bundled_cli_path": "bin/factum.js",
+    "bundled_cli_git_blob_sha1": "b6fa78285c3635e8f8119bd6fbf6bf5db3dd63e6",
+    "command": "node <factum-checkout>/bin/factum.js ddl <model-checkout>/models/fig-mandatory.orm.json --dialect postgres"
+  },
+  "source_model": {
+    "project": "factum-book-models",
+    "repository": "https://github.com/Volland/factum-book-models",
+    "commit": "e5990315e9a2a7905d129c5626cbde09dab2a842",
+    "tree_sha1": "0436823ffda532782557cfc049fa834c04da8870",
+    "path": "models/fig-mandatory.orm.json",
+    "git_blob_sha1": "dab575088c3642a26d4b6850095726a86d48ed0e",
+    "sha256": "f5111e58c806674b262d582d9bc4ddd7dd5b41c9a0b33a24b37d814a6bace807",
+    "size_bytes": 2214,
+    "redistribution": "The upstream model is fetched from the pinned checkout at execution time rather than vendored into the Factgraph source release."
+  },
+  "factgraph_role": "Factgraph imports the exact upstream-authored source model, applies an explicit bounded absorbed-binary physical mapping to the untouched Factum-generated PostgreSQL DDL, and executes source-invalid plus source-valid semantic populations. It never infers the mapping from SQL names.",
+  "expected_live_hypothesis": "preserved_on_tested_cases",
+  "hypothesis_reason": "The upstream model makes Person->Company functional and mandatory on the Person role. Factum 0.5.0's Rmap absorbs functional binaries into the unique-role player's table, and its documented mapping makes a mandatory absorbed column non-null. The hypothesis is a preservation control and is not considered confirmed until PostgreSQL executes both the source-invalid and source-valid populations.",
+  "scope_boundary": "This experiment tests one upstream-authored functional mandatory case. It does not establish general semantic equivalence of Factum ORM and PostgreSQL."
+}

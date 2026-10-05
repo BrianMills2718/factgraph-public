@@ -1,0 +1,8 @@
+model PortabilityValueRange {
+  value PersonId: String
+  value Age: Int { range(0, 130) }
+  entity Person {
+    id personId: PersonId
+    age: Age
+  }
+}

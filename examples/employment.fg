@@ -1,0 +1,27 @@
+model EmploymentModel {
+  value PersonId: UUID
+  value CompanyId: UUID
+  value Email: String
+  value Money: Decimal
+  value DateValue: Date
+
+  entity Person {
+    id personId: PersonId
+    email: Email
+  }
+
+  entity Company {
+    id companyId: CompanyId
+  }
+
+  fact Employment(employee: Person, employer: Company) objectify EmploymentRecord {
+    salary: Money
+    startDate: DateValue
+    reading "{employee} works for {employer}"
+    unique(employee, employer)
+  }
+
+  fact ManagedBy(employment: EmploymentRecord, manager: Person) {
+    reading "{employment} is managed by {manager}"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "format": "factgraph-live-migration-fixture-v1",
+  "description": "A valid before-model population that intentionally violates the after-model required displayName and max-one Membership(member) constraints.",
+  "postgres": {
+    "setup_sql": [
+      "INSERT INTO person (person_id, display_name) VALUES ('p1', NULL)",
+      "INSERT INTO team (team_id) VALUES ('t1')",
+      "INSERT INTO team (team_id) VALUES ('t2')",
+      "INSERT INTO membership (member_id, team_id) VALUES ('p1', 't1')",
+      "INSERT INTO membership (member_id, team_id) VALUES ('p1', 't2')"
+    ]
+  },
+  "mongo": {
+    "setup": [
+      {"op": "insert_one", "collection": "person", "document": {"person_id": "p1"}},
+      {"op": "insert_one", "collection": "team", "document": {"team_id": "t1"}},
+      {"op": "insert_one", "collection": "team", "document": {"team_id": "t2"}},
+      {"op": "insert_one", "collection": "membership", "document": {"member_id": "p1", "team_id": "t1"}},
+      {"op": "insert_one", "collection": "membership", "document": {"member_id": "p1", "team_id": "t2"}}
+    ]
+  }
+}

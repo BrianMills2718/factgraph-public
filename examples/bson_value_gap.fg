@@ -1,0 +1,15 @@
+model BsonValueGap {
+  value LedgerId: String
+  value Money: Decimal {
+    range(0, 1000)
+  }
+  value BusinessDay: Date {
+    oneof("2026-09-04", "2026-09-05")
+  }
+
+  entity LedgerEntry {
+    id ledgerId: LedgerId
+    amount: Money
+    businessDay: BusinessDay
+  }
+}

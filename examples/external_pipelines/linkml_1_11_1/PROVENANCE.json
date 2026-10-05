@@ -1,0 +1,16 @@
+{
+  "format": "factgraph-third-party-pipeline-source-v1",
+  "project": "LinkML",
+  "package": "linkml==1.11.1",
+  "release_url": "https://github.com/linkml/linkml/releases/tag/v1.11.1",
+  "generator_documentation_url": "https://linkml.io/linkml/generators/sqltable.html",
+  "generator_source_url": "https://raw.githubusercontent.com/linkml/linkml/v1.11.1/packages/linkml/src/linkml/generators/sqltablegen.py",
+  "command": [
+    "gen-sqltables",
+    "--dialect",
+    "postgresql",
+    "value_range.yaml"
+  ],
+  "expected_live_hypothesis": "weakened",
+  "hypothesis_reason": "The source range is preserved by the Factgraph LinkML importer, while the pinned LinkML SQLTableGenerator source constructs columns/PKs/FKs/unique constraints but does not itself create minimum_value/maximum_value CHECK constraints. This remains a hypothesis until PostgreSQL executes the generated artifact and the source-semantic witness."
+}

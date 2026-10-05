@@ -1,0 +1,18 @@
+model TeamApp {
+  value PersonId: String
+  value TeamId: String
+  value Label: String
+
+  entity Person {
+    id personId: PersonId
+    displayName: Label?
+  }
+
+  entity Team {
+    id teamId: TeamId
+  }
+
+  fact Membership(member: Person, team: Team) {
+    reading "{member} belongs to {team}"
+  }
+}

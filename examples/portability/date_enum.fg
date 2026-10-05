@@ -1,0 +1,8 @@
+model PortabilityDateEnum {
+  value EventId: String
+  value EventDate: Date { oneof("2026-01-01", "2026-06-15", "2026-12-31") }
+  entity Event {
+    id eventId: EventId
+    eventDate: EventDate
+  }
+}

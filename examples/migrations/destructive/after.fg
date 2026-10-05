@@ -1,0 +1,7 @@
+model Cleanup {
+  value Id: String
+
+  entity Person {
+    id id: Id
+  }
+}

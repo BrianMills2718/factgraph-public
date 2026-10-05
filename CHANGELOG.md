@@ -1,0 +1,240 @@
+# Changelog
+
+## Unreleased
+
+- Model factories that refer to another element now take that element: `Constraint.uniqueness/mandatory/frequency/unordered/ring/role_set` and `Reading.create` take the `FactType` and resolve role ids through it (a name raises `TypeError`); `ObjectifiedFactType.create` and `Role.create` require the real fact id. Previously the constraint factories recomputed name-derived ids that do not exist for facts with explicit identities. Legacy name-derived models keep their historical constraint/reading ids.
+- Added `Model.dangling_references()` as the single referential-integrity definition. `validate_model` reports it (and no longer raises `KeyError` on dangling set constraints or role players); `normalize_model` and `build_audit` fail loudly on it.
+- Fixed a `SyntaxError` on the declared Python 3.11 floor (backslash inside f-string expressions in `audit.py`, `migration.py`, `migrations/base.py`); guarded by `tests/test_python_floor_syntax.py`.
+- Audit verdicts from legacy live reports now fail closed: `preserved_observed`/`weakened_observed` require a passing live result for every matching runtime case. Partial coverage falls back to the non-observed verdict and records `live_coverage` (missing case ids and reason) on the verdict; an observed failure still yields `claim_falsified`.
+
+## 0.18.0 — 2026-09-04
+
+- Upgraded the external PostgreSQL semantic-to-physical mapping contract to v3 with explicit bounded absorption of a non-objectified binary fact into one entity-role table; arbitrary denormalization remains unsupported and is never inferred from SQL text.
+- Added operation coalescing so a source-valid entity + absorbed fact population becomes one physical entity-row insert, while repeated occurrences of the same absorbed fact remain multiplicity-sensitive rather than being silently deduplicated.
+- Added absorbed-fact post-state translation: relationship presence can be tested through non-anchor mapped columns being non-null when the source fact has no separate target table.
+- Fixed live structure preflight to union required columns when an entity and absorbed facts intentionally share one physical table.
+- Aligned the Factum importer with Factum 0.5.0's documented reference-mode default typing (`nr/no/number/id/count/seq` -> integer, `date` -> date, amount/price/total -> money), preventing type-mismatch rejections from masquerading as semantic preservation.
+- Added a provenance-locked upstream Factum control experiment using exact Factum ORM commit `7897dd0...` and exact `factum-book-models` commit `e599031...`; commit, Git blob, version, tree, and source SHA-256 are verified before evidence can count.
+- Hosted CI now runs Factum's checked-in bundled CLI directly from the pinned Git checkout instead of depending on the npm registry for the Factum generator.
+- Kept the Factgraph-authored m:n mandatory bridge experiment as a separate stress case while adding the upstream-authored functional mandatory model as a preservation control.
+
+## 0.17.0 — 2026-09-04
+
+- Generalized source-valid acceptance probes from value domains to fact-set semantics, mandatory participation, uniqueness, preferred identification, finite frequency boundaries, subtype inclusion, symmetry, unordered facts, and subset/equality/exclusion relations.
+- Every generated acceptance probe must validate against the entire source semantic model before it is emitted; unsupported/unsatisfiable positive cases remain absent rather than guessed.
+- External PostgreSQL artifact audits now lower the generalized source-valid probes through the same explicit semantic-to-physical mapping used by the invalid witness.
+- Renamed the probe-scoped refinement from `preserved_on_tested_boundaries` to `preserved_on_tested_cases`, because the positive evidence is no longer limited to numeric/enumeration boundaries.
+- The Factum ORM total-participation experiment now carries both directions of evidence: a source-invalid Person-with-no-bridge witness and a source-valid Person+Skill+bridge participation probe.
+- External acceptance-probe indexes now include obligation kind, making evidence bundles easier to inspect and aggregate without reopening each payload.
+- Added regressions for relationship/identity positive probes and for Factum's exact case-sensitive external layout.
+
+## 0.16.0 — 2026-09-04
+
+- Added source-valid acceptance/boundary probes for value-domain obligations. Invalid counterexamples still test weakening; valid probes refine a blocked-invalid result into `preserved_on_tested_cases`, `stronger_or_incompatible`, or unresolved without claiming full equivalence.
+- Audit bundles now persist `acceptance_probes/` alongside counterexamples and summarize their source-validity scope.
+- Upgraded the bounded external PostgreSQL mapping contract to v2 so exact case-sensitive/quoted PostgreSQL identifiers can be mapped without guessing or lowercasing. Legacy v1 mappings remain accepted with explicit compatibility handling.
+- Added a second pinned independent pipeline experiment: Factum ORM 0.5.0 `factum ddl ... --dialect postgres` -> untouched PostgreSQL DDL -> explicit mapping -> Factgraph source-semantic mandatory-participation witness -> live PostgreSQL.
+- Added hosted CI for the Factum experiment with exact package-version pinning and required generator/live execution.
+- The Factum total-participation weakening is a falsifiable hypothesis only; local packaging has no Factum/PostgreSQL runtime and records no finding.
+- Extended active-surface determinism to cover both pinned external pipeline handoffs and acceptance-probe artifacts.
+
+## 0.15.0 — 2026-09-04
+
+- added the first pinned independent conversion-pipeline experiment: LinkML 1.11.1 → PostgreSQL;
+- added a LinkML source model whose `age` slot carries `minimum_value: 0` and `maximum_value: 130`;
+- hosted CI now installs the pinned third-party LinkML release and invokes its own `gen-sqltables --dialect postgresql`;
+- preserves the untouched third-party DDL and generator provenance, then audits it through the explicit external PostgreSQL mapping contract;
+- uses the same source-semantic `age=-1` counterexample rather than inspecting SQL text to decide preservation;
+- added a dedicated live PostgreSQL CI job that fails unless the external pipeline produces the expected observed semantic outcome;
+- local environments without LinkML report `generator_unavailable` instead of promoting the external-pipeline hypothesis to evidence.
+
+## 0.14.0 — 2026-09-04
+
+- added the first semantic audit path for PostgreSQL DDL produced outside Factgraph;
+- added an explicit source-semantic-to-physical mapping manifest bound to exact model and artifact SHA-256 hashes rather than inferring intent from database names;
+- rewrite the existing source-semantic witness programs and supported post-state queries through that physical mapping;
+- added isolated external-DDL and mapped table/column preflight so malformed artifacts/mappings cannot be misreported as preserved semantics;
+- added claim-independent live observations (`preserved_or_stronger` / `weakened` / unresolved) suitable for third-party mappings with no Factgraph capability declaration;
+- added `postgres-map-template` and `audit-postgres-artifact` CLI commands and file-oriented audit bundles;
+- added paired preserving/weakened external PostgreSQL examples for the same value-range conceptual rule;
+- added a hosted-CI step that runs the identical `Age = -1` semantic witness against both external artifacts and requires opposite semantic observations;
+- retained the release rule that this packaging environment reports the external-artifact demo as generated/unobserved when PostgreSQL is unavailable.
+
+## 0.13.0 — 2026-09-04
+
+- made shared source-semantic witness execution the authoritative live evidence channel for primary semantic-preservation verdicts;
+- retained historical backend-specific conformance cases as secondary evidence instead of allowing them to outrank the shared semantic oracle;
+- added model-semantic and exact witness-plan SHA-256 fingerprints to every generated/live shared-witness report;
+- added strict portable live-evidence validation that refuses to apply results to a different normalized model or a different generated witness plan;
+- added `factgraph audit --shared-live-dir DIR` so CI/external live evidence can be re-applied offline without reconnecting to databases;
+- added target-scoped `semantic_live.json` handoffs separate from legacy `live.json`;
+- added an offline replay verifier that reconstructs asserted semantic verdicts from portable CI evidence and fails on provenance or replay mismatches;
+- hardened the hosted semantic-portability workflow with a bounded timeout and portable-evidence replay gate before mutation testing;
+- preserved the release rule that unexecuted live plans remain `not_run`/generated evidence and never become observed passes.
+
+## 0.12.0 — 2026-09-04
+
+- added a shared semantic-witness execution channel so the source counterexample, not a separately handcrafted backend fixture, becomes the common target test oracle;
+- retained the locally irreducible minimal source witness as a distinct artifact and added target-independent source-context execution envelopes only when physical storage requires surrounding valid context;
+- require the semantic oracle to re-validate every contextualized execution witness and still report exactly the original obligation;
+- added optional SemanticPopulation v2 objectification occurrence bindings while keeping v1 populations backward compatible;
+- added objectification-aware PostgreSQL, MongoDB, and TypeDB lowering for relationship-owned fields and relationship-as-player references;
+- added deterministic transport-only support identities where target addressing requires them, without treating them as domain identifiers;
+- distinguish `lowered`, `representation_prevents_exact_realization`, and `unsupported` rather than replacing non-realizable invalid states with different target witnesses;
+- added target-native post-state queries for acceptance-sensitive mandatory, subset, equality, symmetry, and MongoDB subtype evidence;
+- integrated shared-witness live execution into the portability benchmark so requested live runs fail on wrong accept/reject outcomes or unresolved/incorrect required post-state checks;
+- current contextual corpus boundary: PostgreSQL 104 executable / 38 representation-prevented / 0 unsupported, MongoDB 104 / 38 / 0, TypeDB 141 / 1 / 0;
+- current shared execution corpus contains 349 target-executable cases and 12/12 required post-state queries;
+- retained the evidence rule that this packaging environment has zero live-observed database cases when services/drivers are unavailable.
+
+## 0.11.0 — 2026-09-04
+
+- added native bounded Factum ORM `.orm.json` v1/v2 import and audit auto-detection;
+- preserve Factum `meta.guid` as cross-tool semantic identity when present, otherwise preserve Factum element IDs;
+- import Factum n-ary facts, roles, readings, objectification, ref-mode identification, single inheritance, selected ORM constraints, value domains, and fact populations when isomorphic to the current semantic kernel;
+- report deontic, disjunctive mandatory, richer ring/cardinality/subtype-set/derivation/value-range and other unsupported Factum semantics explicitly rather than strengthening or guessing;
+- added target-independent semantic population representation and validator;
+- added deterministic source-level counterexample synthesis for every current audit obligation family;
+- separate duplicate physical rows from conceptual fact-set evaluation so duplicates do not spuriously increase frequency or other set-based constraints;
+- added bounded contextual repair so witness populations satisfy unrelated mandatory, symmetry, subset, and equality rules when possible;
+- added local-irreducibility checking by greedy single-element deletion, with no global-minimum claim;
+- added a generated 20-model / 142-obligation counterexample benchmark whose current corpus result is 142 isolated, 142 locally irreducible witnesses;
+- extended CI/build/determinism coverage from two external semantic formats to three: Apache Ossie, LinkML, and Factum ORM JSON;
+- retained the v0.10 evidence rule that unavailable PostgreSQL/MongoDB/TypeDB live execution remains `not_run`, never a pass.
+
+## 0.10.0 — 2026-09-04
+
+- pivoted the primary workflow from broad schema compilation/repository mechanics to **semantic portability auditing**;
+- added obligation-level semantic preservation reports, transformation traces, witness files, and explicit evidence levels;
+- added `factgraph audit` with PostgreSQL, MongoDB, and TypeDB target verdicts and separate live evidence handoffs;
+- added bounded Apache Ossie and LinkML importers with source-stable identities and explicit gap reports;
+- added deterministic TypeDB 3.x TypeQL projection/capability reporting and an optional commit-observing live conformance runner;
+- added a pinned PostgreSQL/MongoDB/TypeDB Docker + GitHub Actions live evidence path;
+- added a 20-case semantic-portability benchmark with machine-readable target expectations;
+- added six deliberate target mutations and a live mutation-oracle runner;
+- fixed a PostgreSQL conformance coverage gap discovered by the new objectification benchmark (value constraint on relationship-owned field);
+- documented the strategic rereview, active feature freeze, and hard v1.0 go/no-go requirements;
+- retained v0.1–v0.9 compiler, migration, metamodel, repository, and collaboration functionality as supporting infrastructure.
+
+## 0.9.0 — 2026-09-04
+
+- added filesystem repository remotes with repository-ID pinning and portable relative paths where possible;
+- added deterministic `factgraph-transfer-pack-v1` content-addressed transfer packs mapping immutable logical repository files to SHA-256 objects;
+- added `repo-fetch` that imports/validates immutable revisions and updates remote-tracking refs without advancing local branches;
+- added fast-forward-only `repo-push`, keeping immutable object transfer separate from remote branch movement;
+- added portable `factgraph-revision-attestation-v2` / signing payload v2 that excludes repository identity so signatures can travel with revisions;
+- retained verification of v0.8 repository-bound v1 attestations;
+- added explicit repository trust policy with trusted/revoked keys, protected branch rules, minimum signature counts, and optional key allow-lists;
+- integrated protected-branch trust checks into repository verification and remote push;
+- made transferred public keys verification material only—never an implicit trust decision;
+- added ORM-aware merge conflict explanations with semantic impact, changed fields, decision questions, and `merge.explanation.md`;
+- added deterministic collaboration demo proving unsigned protected push rejection, signed push success, transfer deduplication, fetch-only tracking, trust verification, and explained conflicts;
+- documented nonclaims: no HTTP/SSH/cloud transport, force push, distributed consensus/locking, automatic conflict resolution, transparency log, or Git replacement.
+
+## 0.8.0 — 2026-09-04
+
+- added opt-in explicit `identity "token"` syntax for models, object/value types, fields, fact types, roles, and objectification so semantic IDs can survive display-name renames;
+- retained legacy deterministic name-derived IDs and added `identity_coverage.json` to distinguish rename-stable from legacy identity;
+- taught semantic diff/migration alignment to prefer semantic identity before explicit rename hints and names;
+- evolved the repository from one linear head to a local multi-parent revision DAG with named branches and immutable tags;
+- added branch/tag/ref CLI handoffs and DAG/ref verification while keeping v0.7 repositories readable as a synthetic `main` branch;
+- added deterministic three-way semantic merge over normalized object/fact/role/readings/constraints/field-hints/sample/analysis elements;
+- added explicit deterministic conflict records and file-carried `ours`/`theirs`/`base`/`delete` resolutions rather than fuzzy or automatic conflict guessing;
+- added multi-parent merge commits and common-ancestor discovery;
+- added revision provenance fields for author/message/operation context;
+- added append-only Ed25519 revision attestations, public-key registration, signature verification, and repository verification integration without mutating immutable revisions;
+- added a reproducible v0.8 repository evolution demo covering rename-stable identity, independent semantic merge, a real modify/modify conflict, explicit resolution, tags/branches, and attestation tamper detection;
+- documented nonclaims: no remote synchronization, no organizational trust/key-revocation policy, no automatic domain-aware merge resolution, and no claim that legacy name-derived IDs survive renames.
+
+## 0.7.0 — 2026-09-04
+
+- preserved the v0.6 metamodel contract as packaged metamodel v1 and introduced metamodel v2;
+- added explicit v2 codec-version, semantic-hash, and manifest-hash population facts;
+- added `metamodel-versions`, `metamodel-diff`, and `metamodel-migrate`;
+- made metamodel population migration decode through the source codec and re-encode through the destination codec, with semantic/manifest equality as the migration contract;
+- added canonical JSON population loading with metamodel-version and hash checks;
+- added a deterministic filesystem model repository with immutable revision directories;
+- stored source, normalized, semantic, manifest, validation, core population, envelope population, parent link, metamodel version, and SHA-256 artifact hashes per revision;
+- added `repo-init`, `repo-commit`, `repo-list`, `repo-log`, `repo-checkout`, `repo-verify`, `repo-diff`, and `repo-migrate-metamodel`;
+- added repository verification that replays population decoding/re-encoding rather than trusting indexes;
+- added immutable metamodel-migration revisions whose domain semantic diff is expected to remain empty;
+- added a reproducible repository/metamodel migration demonstration and v0.7 documentation.
+
+## 0.6.0 — 2026-09-04
+
+- added a canonical Factgraph metamodel expressed entirely as an ordinary Factgraph model;
+- added deterministic encoding of normalized models as populations of that metamodel;
+- separated semantic-core reification from a compiler envelope carrying samples, field projection hints, and source-line provenance;
+- added decoding with semantic-equality and full-manifest round-trip contracts;
+- added metamodel self-description: the metamodel encodes itself, validates as an ordinary population, decodes identically, and produces an identical second encoding;
+- added `factgraph metamodel` and `factgraph reify`;
+- integrated metamodel reification evidence into every ordinary build;
+- documented the narrow claim explicitly: this is semantic self-hosting, not Python compiler bootstrapping or a universal metamodel proof.
+
+## 0.4.0 — 2026-09-04
+
+- added semantic diff between two normalized factgraph models;
+- added explicit rename hints for object types, facts, roles, and fields, with no heuristic rename guessing;
+- added `safe`, `requires_data_check`, `destructive`, and `manual` change classification;
+- added target-independent semantic migration plans in JSON and Markdown;
+- added PostgreSQL migration planning for table/column renames, additive schema evolution, nullability, uniqueness, checks, and foreign keys;
+- added deterministic PostgreSQL preflight queries and safe/risky/destructive preview tiers;
+- added MongoDB collection/validator/index migration planning and staged non-indexed field renames;
+- escalated MongoDB indexed field/role renames and source-independent required-field backfills to explicit manual steps;
+- added `factgraph diff` and `factgraph migrate` CLI commands;
+- added three migration fixture families (`safe_risky`, `rename`, `destructive`);
+- preserved the project rule that plans/previews are files and are never mistaken for migrations that were actually executed.
+
+## 0.3.0 — 2026-09-04
+
+- added numeric value ranges and scalar `oneof` constraints;
+- added frequency constraints over role sequences;
+- added subset, equality, and exclusion constraints over cross-fact role-sequence projections;
+- added single-inheritance entity subtyping with inherited identification;
+- added semantic validation for value/frequency/set constraints against sample populations;
+- added PostgreSQL `CHECK` projection for value domains, max-one frequency uniqueness, and table-per-type subtype PK/FK enforcement;
+- added MongoDB value validators, max-one frequency unique indexes, and inherited subtype identifier shape with explicit inclusion non-enforcement;
+- made MongoDB value-domain enforcement type-aware: Decimal/Date/Timestamp literal constraints are retained as explicit gaps in the canonical pure JSON target instead of being overclaimed;
+- added GraphQL metadata/description projection for richer semantics;
+- added target capability and conformance coverage for all new native/emulated claims;
+- added gap probes for higher frequency bounds, subtype inclusion where not enforced, and cross-fact set constraints;
+- added `richer_constraints.fg` and `set_constraints.fg` examples;
+- preserved the v0.2 rule that unavailable live services are reported as unavailable rather than passed.
+
+## 0.2.0
+
+- added executable target-conformance case generation;
+- added structural conformance coverage for PostgreSQL and MongoDB capability claims;
+- added optional live PostgreSQL and MongoDB runners;
+- added Docker Compose conformance environment and run scripts;
+- added gap probes for total participation and logical symmetry that adapters report as not enforced;
+- added `roundtrip.json` distinguishing structural recovery from sidecar-assisted exact recovery;
+- added `mandatory_participation.fg` example;
+- added conformance and round-trip test coverage;
+- retained zero mandatory runtime dependencies.
+
+## 0.1.0 — 2026-09-04
+
+Initial implementation of the fact-oriented semantic compiler described in the project context brief.
+
+Highlights:
+
+- ORM-inspired semantic kernel;
+- role-aware incidence representation;
+- field and relationship-field desugaring;
+- objectification;
+- PostgreSQL, MongoDB, and GraphQL projections;
+- capability/enforcement reports;
+- pure-target versus semantic-sidecar recovery distinction;
+- deterministic generated artifacts and automated round-trip tests.
+
+## 0.5.0 — executable migration evidence
+
+- Added `factgraph live-migrate` for isolated live PostgreSQL/MongoDB migration execution.
+- Added explicit risky/destructive execution policy; manual operations remain non-executable.
+- Added PostgreSQL transactional migration execution, generated-preflight gating, rollback-on-failure, and live schema introspection.
+- Added structured parameters to MongoDB target migration operations so PyMongo executes the plan without evaluating JavaScript strings.
+- Added MongoDB live migration execution and validator/index introspection; generic rollback is explicitly not claimed.
+- Added `factgraph-live-migration-fixture-v1` with passing and intentionally failing old-population fixtures.
+- Added `scripts/run_live_migrations.sh`, `docs/LIVE_MIGRATIONS.md`, and the v0.5 execution matrix.
+- Migration planning still remains file-only; live execution is a separate opt-in command.

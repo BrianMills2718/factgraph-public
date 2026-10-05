@@ -1,0 +1,22 @@
+id: https://example.org/factgraph/linkml/value-range
+name: linkml_external_value_range
+prefixes:
+  linkml: https://w3id.org/linkml/
+  ex: https://example.org/factgraph/linkml/value-range/
+imports:
+  - linkml:types
+default_prefix: ex
+default_range: string
+
+classes:
+  person:
+    attributes:
+      person_id:
+        range: string
+        identifier: true
+        required: true
+      age:
+        range: integer
+        required: true
+        minimum_value: 0
+        maximum_value: 130

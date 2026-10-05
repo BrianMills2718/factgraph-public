@@ -1,0 +1,8 @@
+model PortabilityCompoundIdentifier {
+  value StudentId: String
+  value CourseId: String
+  entity Enrollment {
+    id studentId: StudentId
+    id courseId: CourseId
+  }
+}

@@ -1,0 +1,11 @@
+model PortabilityNarySetSemantics {
+  value AId: String
+  value BId: String
+  value CId: String
+  entity A { id id: AId }
+  entity B { id id: BId }
+  entity C { id id: CId }
+  fact Ternary(a: A, b: B, c: C) {
+    reading "{a} is related to {b} in {c}"
+  }
+}

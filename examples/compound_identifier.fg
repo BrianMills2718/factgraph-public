@@ -1,0 +1,18 @@
+model CompoundIdentifier {
+  value FirstName: String
+  value LastName: String
+  value ProjectCode: String
+
+  entity Employee {
+    id firstName: FirstName
+    id lastName: LastName
+  }
+
+  entity Project {
+    id code: ProjectCode
+  }
+
+  fact Assignment(worker: Employee, project: Project) {
+    reading "{worker} is assigned to {project}"
+  }
+}

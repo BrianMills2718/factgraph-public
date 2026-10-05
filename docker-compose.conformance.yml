@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: factgraph
+      POSTGRES_PASSWORD: factgraph
+      POSTGRES_DB: factgraph
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factgraph -d factgraph"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "57017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  typedb:
+    image: typedb/typedb:3.12.1
+    ports:
+      - "51729:1729"
+      - "58000:8000"

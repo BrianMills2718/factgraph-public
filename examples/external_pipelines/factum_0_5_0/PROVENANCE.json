@@ -1,0 +1,16 @@
+{
+  "bundled_cli_git_blob_sha1": "b6fa78285c3635e8f8119bd6fbf6bf5db3dd63e6",
+  "bundled_cli_path": "bin/factum.js",
+  "factgraph_role": "Factgraph imports the source semantics independently, preserves the untouched generated SQL artifact, applies an explicit semantic-to-physical mapping, and executes a source-invalid population against PostgreSQL.",
+  "format": "factgraph-third-party-pipeline-provenance-v1",
+  "generator_command": "factum ddl mandatory_bridge.orm.json --dialect postgres",
+  "generator_commit": "7897dd0c4303b9eea46c60342f1632b27a624744",
+  "hosted_ci_invocation": "node .third_party/factum-orm/bin/factum.js ddl mandatory_bridge.orm.json --dialect postgres",
+  "hypothesis": "The source single-role mandatory constraint requires every Person to participate in PersonHasSkill. A separate bridge table with NOT NULL foreign-key columns constrains rows that exist but does not require every Person row to have a bridge row. The hypothesis is not counted as confirmed until live PostgreSQL execution realizes the source-invalid Person-with-no-skill population.",
+  "package": "factum-orm",
+  "pinned_version": "0.5.0",
+  "pipeline": "Factum ORM -> PostgreSQL DDL",
+  "reference_commit_observed_during_preparation": "7897dd0c4303b9eea46c60342f1632b27a624744",
+  "source_ownership": "Factgraph-authored stress fixture; not an upstream Factum-authored model",
+  "upstream_repository": "https://github.com/Volland/factum-orm"
+}

@@ -1,0 +1,196 @@
+name: semantic-portability
+
+# Manual-only per Brian 2026-10-03: do not rely on hosted CI; local checks are the merge gate.
+on:
+  workflow_dispatch:
+
+jobs:
+  unit-and-structural:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e '.[interchange]'
+      - run: python -m pytest
+      - run: python -m compileall -q src tests
+
+  live-portability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -U pip
+      - run: python -m pip install -e '.[live,interchange]'
+      - run: docker compose -f docker-compose.conformance.yml up -d --wait
+      - run: python scripts/wait_for_conformance_services.py
+      - name: Run live conformance corpus
+        env: &live-env
+          FACTGRAPH_POSTGRES_DSN: postgresql://factgraph:factgraph@127.0.0.1:55432/factgraph
+          FACTGRAPH_MONGO_URI: mongodb://127.0.0.1:57017
+          FACTGRAPH_TYPEDB_ADDRESS: 127.0.0.1:51729
+          FACTGRAPH_TYPEDB_USERNAME: admin
+          FACTGRAPH_TYPEDB_PASSWORD: password
+        run: scripts/run_live_conformance.sh
+      - name: Run live semantic-portability benchmark
+        env: *live-env
+        run: python scripts/build_portability_benchmark.py --out-dir artifacts/portability_benchmark
+      - name: Validate portable live-evidence replay
+        run: python scripts/verify_portable_live_evidence.py --root artifacts/portability_benchmark --require-live
+      - name: Mutation-test the conformance oracle
+        env: *live-env
+        run: python scripts/run_live_mutation_audit.py --out-dir artifacts/portability_mutations
+      - name: Audit third-party-style PostgreSQL artifacts with the same semantic witness
+        env: *live-env
+        run: python scripts/run_external_postgres_artifact_audit.py --out-dir artifacts/external_postgres_live --require-live
+      - name: Audit external Ossie model against live targets
+        env: *live-env
+        run: >-
+          factgraph audit examples/external/ossie_people.yaml --out-dir artifacts/external_live/ossie
+          --postgres-dsn "$FACTGRAPH_POSTGRES_DSN" --mongo-uri "$FACTGRAPH_MONGO_URI"
+          --typedb-address "$FACTGRAPH_TYPEDB_ADDRESS" --typedb-username "$FACTGRAPH_TYPEDB_USERNAME"
+          --typedb-password "$FACTGRAPH_TYPEDB_PASSWORD"
+      - name: Audit external LinkML model against live targets
+        env: *live-env
+        run: >-
+          factgraph audit examples/external/linkml_people.yaml --out-dir artifacts/external_live/linkml
+          --postgres-dsn "$FACTGRAPH_POSTGRES_DSN" --mongo-uri "$FACTGRAPH_MONGO_URI"
+          --typedb-address "$FACTGRAPH_TYPEDB_ADDRESS" --typedb-username "$FACTGRAPH_TYPEDB_USERNAME"
+          --typedb-password "$FACTGRAPH_TYPEDB_PASSWORD"
+      - name: Audit external Factum ORM model against live targets
+        env: *live-env
+        run: >-
+          factgraph audit examples/external/factum_people.orm.json --out-dir artifacts/external_live/factum
+          --postgres-dsn "$FACTGRAPH_POSTGRES_DSN" --mongo-uri "$FACTGRAPH_MONGO_URI"
+          --typedb-address "$FACTGRAPH_TYPEDB_ADDRESS" --typedb-username "$FACTGRAPH_TYPEDB_USERNAME"
+          --typedb-password "$FACTGRAPH_TYPEDB_PASSWORD"
+      - if: always()
+        run: mkdir -p artifacts/live_conformance && docker compose -f docker-compose.conformance.yml logs --no-color > artifacts/live_conformance/service-logs.txt || true
+      - name: Preserve evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-portability-live-evidence
+          path: |
+            artifacts/live_conformance
+            artifacts/portability_benchmark
+            artifacts/portability_mutations
+            artifacts/external_live
+            artifacts/external_postgres_live
+      - if: always()
+        run: docker compose -f docker-compose.conformance.yml down -v
+
+
+  third-party-linkml-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: factgraph
+          POSTGRES_USER: factgraph
+          POSTGRES_PASSWORD: factgraph
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U factgraph -d factgraph"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -U pip
+      - name: Install Factgraph and pinned third-party generator
+        run: python -m pip install -e '.[live,interchange]' 'linkml==1.11.1'
+      - name: Generate LinkML PostgreSQL DDL and audit the untouched artifact live
+        env:
+          FACTGRAPH_POSTGRES_DSN: postgresql://factgraph:factgraph@127.0.0.1:5432/factgraph
+        run: >-
+          python scripts/run_linkml_postgres_pipeline_audit.py
+          --out-dir artifacts/external_pipelines/linkml_1_11_1
+          --postgres-dsn "$FACTGRAPH_POSTGRES_DSN"
+          --require-generator --require-live
+      - name: Preserve third-party pipeline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linkml-1.11.1-postgres-semantic-audit
+          path: artifacts/external_pipelines/linkml_1_11_1
+
+  third-party-factum-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: factgraph
+          POSTGRES_USER: factgraph
+          POSTGRES_PASSWORD: factgraph
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U factgraph -d factgraph"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout exact Factum ORM 0.5.0 generator source
+        uses: actions/checkout@v4
+        with:
+          repository: Volland/factum-orm
+          ref: 7897dd0c4303b9eea46c60342f1632b27a624744
+          path: .third_party/factum-orm
+          persist-credentials: false
+      - name: Checkout exact upstream Factum book-model source
+        uses: actions/checkout@v4
+        with:
+          repository: Volland/factum-book-models
+          ref: e5990315e9a2a7905d129c5626cbde09dab2a842
+          path: .third_party/factum-book-models
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -U pip
+      - name: Install Factgraph live dependencies
+        run: python -m pip install -e '.[live,interchange]'
+      - name: Audit Factgraph-authored m:n stress case through the exact Factum generator commit
+        env:
+          FACTGRAPH_POSTGRES_DSN: postgresql://factgraph:factgraph@127.0.0.1:5432/factgraph
+        run: >-
+          python scripts/run_factum_postgres_pipeline_audit.py
+          --generator .third_party/factum-orm/bin/factum.js
+          --package-json .third_party/factum-orm/package.json
+          --out-dir artifacts/external_pipelines/factum_0_5_0/stress_case
+          --postgres-dsn "$FACTGRAPH_POSTGRES_DSN"
+          --require-generator --require-live
+      - name: Audit upstream-authored Factum mandatory control with commit/blob provenance verification
+        env:
+          FACTGRAPH_POSTGRES_DSN: postgresql://factgraph:factgraph@127.0.0.1:5432/factgraph
+        run: >-
+          python scripts/run_factum_upstream_postgres_pipeline_audit.py
+          --factum-repo .third_party/factum-orm
+          --model-repo .third_party/factum-book-models
+          --out-dir artifacts/external_pipelines/factum_0_5_0/upstream_fig_mandatory
+          --postgres-dsn "$FACTGRAPH_POSTGRES_DSN"
+          --require-checkouts --require-live
+      - name: Preserve Factum third-party pipeline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: factum-0.5.0-postgres-semantic-audit
+          path: artifacts/external_pipelines/factum_0_5_0

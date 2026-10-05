@@ -1,0 +1,28 @@
+model WarehouseModel {
+  value PartNo: String
+  value BinNo: String
+  value WarehouseCode: String
+
+  entity Part {
+    id partNo: PartNo
+  }
+
+  entity Bin {
+    id binNo: BinNo
+  }
+
+  entity Warehouse {
+    id code: WarehouseCode
+  }
+
+  fact Stocking(part: Part, bin: Bin, warehouse: Warehouse) {
+    reading "{part} is in {bin} in {warehouse}"
+    unique(part, bin, warehouse)
+  }
+
+  sample Stocking("P-100", "B-7", "SYD")
+  sample Stocking("P-101", "B-7", "SYD")
+
+  analysis connected
+  analysis uniform(2)
+}

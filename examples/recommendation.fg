@@ -1,0 +1,19 @@
+model RecommendationModel {
+  value PersonId: UUID
+  value JobId: UUID
+
+  entity Person {
+    id personId: PersonId
+  }
+
+  entity Job {
+    id jobId: JobId
+  }
+
+  fact Recommendation(recommender: Person, candidate: Person, job: Job) {
+    reading "{recommender} recommends {candidate} for {job}"
+  }
+
+  sample Recommendation("alice", "bob", "job-1")
+  sample Recommendation("bob", "alice", "job-1")
+}

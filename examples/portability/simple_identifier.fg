@@ -1,0 +1,4 @@
+model PortabilitySimpleIdentifier {
+  value Email: String
+  entity Person { id email: Email }
+}

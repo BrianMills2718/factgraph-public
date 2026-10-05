@@ -1,0 +1,28 @@
+model TeamApp {
+  value PersonId: String
+  value TeamId: String
+  value Label: String
+  value Age: Int {
+    range(0, 120)
+  }
+
+  entity Person {
+    id personId: PersonId
+    displayName: Label
+    age: Age?
+  }
+
+  entity Team {
+    id teamId: TeamId
+    description: Label?
+  }
+
+  fact Membership(member: Person, team: Team) {
+    reading "{member} belongs to {team}"
+    frequency(member, 0, 1)
+  }
+
+  fact Invitation(person: Person, team: Team) {
+    reading "{person} is invited to {team}"
+  }
+}
