@@ -91,6 +91,9 @@ def test_reserved_entity_and_field_names_get_a_trailing_underscore():
     assert "REFERENCES user_ (" in sql and "REFERENCES group_ (" in sql
     # ordinary names are unchanged
     assert "CREATE TABLE conversation (" in sql and "group_id UUID NOT NULL" in sql
+    conversation = sql[sql.index("CREATE TABLE conversation ("):]
+    conversation = conversation[: conversation.index(");")]
+    assert "group_id UUID NOT NULL" in conversation and "group__id" not in conversation
     assert postgres.pg_name("Conversation") == "conversation" and postgres.pg_name("User") == "user_"
 
 
@@ -101,3 +104,21 @@ def test_conformance_and_witness_sql_use_the_same_reserved_safe_names():
     assert statements, "expected PostgreSQL conformance statements"
     assert not any(s.startswith(("INSERT INTO user ", "INSERT INTO group ")) for s in statements)
     assert any(s.startswith("INSERT INTO user_ ") for s in statements)
+
+
+def test_a_bare_value_role_named_after_a_reserved_word_is_renamed():
+    m = normalize_model(parse_model("""
+model Ranking {
+  value Position: Int
+  value PlayerId: UUID
+  entity Player {
+    id playerId: PlayerId
+  }
+  fact Ranked(player: Player, order: Position) {
+    reading "{player} is ranked {order}"
+  }
+}
+"""))
+    sql = postgres.emit_sql(m)
+    assert "order_ BIGINT NOT NULL" in sql or "order_ INTEGER NOT NULL" in sql
+    assert "player_id UUID NOT NULL" in sql

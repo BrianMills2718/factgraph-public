@@ -1,4 +1,4 @@
-> **Public snapshot.** This repository is a public copy of a private development repository (`factgraph` at `921f888`, 2026-10-05). Development history is kept private. The recorded evidence folder (`artifacts/`, 37 MB) and the hash manifests that cover it are left out; the commands in this README regenerate the evidence. All 297 tests pass in this copy.
+> **Public snapshot.** This repository is a public copy of a private development repository (`factgraph` at `de2ea0e`, 2026-10-05). Development history is kept private. The recorded evidence folder (`artifacts/`, 37 MB) and the hash manifests that cover it are left out; the commands in this README regenerate the evidence. All 298 tests pass in this copy.
 
 # factgraph
 

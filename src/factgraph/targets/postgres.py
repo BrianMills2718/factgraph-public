@@ -129,9 +129,10 @@ def _objectified_table_for(model: Model, objectified: ObjectifiedFactType) -> st
 
 def _role_columns(model: Model, role) -> tuple[tuple[str, str], ...]:
     player = model.object_types[role.player_id]
-    base = pg_name(role.name)
+    # A role column carries a suffix (group -> group_id), so only a bare value-role column can be reserved.
+    base = slug(role.name)
     if isinstance(player, ValueType):
-        return ((base, _value_sql(model, player.id)),)
+        return ((pg_name(role.name), _value_sql(model, player.id)),)
     if isinstance(player, EntityType):
         key = _entity_key(model, player)
         if len(key) == 1:
